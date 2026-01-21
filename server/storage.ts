@@ -1,38 +1,111 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { db } from "./db";
+import { users, companies, quotes, bids, auditLogs, type User, type InsertUser, type Quote, type InsertQuote, type Bid, type InsertBid, type Company, type InsertCompany } from "@shared/schema";
+import { eq, desc } from "drizzle-orm";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 
-// modify the interface with any CRUD methods
-// you might need
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
+  getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  createCompany(company: InsertCompany): Promise<Company>;
+  getCompanies(): Promise<Company[]>;
+
+  createQuote(userId: number, quote: InsertQuote): Promise<Quote>;
+  getQuotes(): Promise<(Quote & { client: User, bids: Bid[] })[]>;
+  getQuote(id: number): Promise<(Quote & { client: User, bids: (Bid & { carrier: User })[] }) | undefined>;
+  
+  createBid(carrierId: number, quoteId: number, bid: InsertBid): Promise<Bid>;
+  getBidsForQuote(quoteId: number): Promise<Bid[]>;
+  updateBidStatus(id: number, status: string): Promise<Bid>;
+  
+  sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
 
   constructor() {
-    this.users = new Map();
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true,
+    });
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async createUser(user: InsertUser): Promise<User> {
+    const [newUser] = await db.insert(users).values(user).returning();
+    return newUser;
+  }
+
+  async createCompany(company: InsertCompany): Promise<Company> {
+    const [newCompany] = await db.insert(companies).values(company).returning();
+    return newCompany;
+  }
+
+  async getCompanies(): Promise<Company[]> {
+    return db.select().from(companies);
+  }
+
+  async createQuote(userId: number, quote: InsertQuote): Promise<Quote> {
+    const [newQuote] = await db.insert(quotes).values({ ...quote, clientId: userId }).returning();
+    return newQuote;
+  }
+
+  async getQuotes(): Promise<(Quote & { client: User, bids: Bid[] })[]> {
+    const rows = await db.query.quotes.findMany({
+      orderBy: [desc(quotes.createdAt)],
+      with: {
+        client: true,
+        bids: true
+      }
+    });
+    return rows;
+  }
+
+  async getQuote(id: number): Promise<(Quote & { client: User, bids: (Bid & { carrier: User })[] }) | undefined> {
+    const quote = await db.query.quotes.findFirst({
+      where: eq(quotes.id, id),
+      with: {
+        client: true,
+        bids: {
+          with: {
+            carrier: true
+          }
+        }
+      }
+    });
+    return quote;
+  }
+
+  async createBid(carrierId: number, quoteId: number, bid: InsertBid): Promise<Bid> {
+    const [newBid] = await db.insert(bids).values({ ...bid, carrierId, quoteId }).returning();
+    // Update quote status to responded if it's currently open
+    await db.update(quotes).set({ status: 'responded' }).where(eq(quotes.id, quoteId));
+    return newBid;
+  }
+
+  async getBidsForQuote(quoteId: number): Promise<Bid[]> {
+    return db.select().from(bids).where(eq(bids.quoteId, quoteId));
+  }
+
+  async updateBidStatus(id: number, status: string): Promise<Bid> {
+    const [updated] = await db.update(bids).set({ status: status as any }).where(eq(bids.id, id)).returning();
+    return updated;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
