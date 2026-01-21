@@ -2,7 +2,7 @@ import { Layout } from "@/components/Layout";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertCompanySchema, type Company } from "@shared/schema";
+import { insertCompanySchema } from "@shared/schema";
 import { api, buildUrl } from "@shared/routes";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
@@ -35,7 +35,7 @@ const FREIGHT_TYPES = [
   { id: "fracionado", label: "Fracionado" },
   { id: "lotacao", label: "Lotação" },
   { id: "refrigerado", label: "Refrigerado" },
-  { id: "perigoso", label: "Carga Perigosa" },
+  { id: "perigoso", label: "Perigoso" },
 ];
 
 export default function CarrierDetail() {
