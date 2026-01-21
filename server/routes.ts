@@ -12,17 +12,60 @@ export async function registerRoutes(
 ): Promise<Server> {
   setupAuth(app);
 
+  // Companies CRUD
+  app.get(api.companies.list.path, async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
+    const type = req.query.type as "client" | "carrier" | undefined;
+    const items = await storage.getCompanies(type);
+    res.json(items);
+  });
+
+  app.post(api.companies.create.path, async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
+    try {
+      const input = api.companies.create.input.parse(req.body);
+      const item = await storage.createCompany(input);
+      res.status(201).json(item);
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      throw err;
+    }
+  });
+
+  app.patch(api.companies.update.path, async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
+    const item = await storage.updateCompany(Number(req.params.id), req.body);
+    res.json(item);
+  });
+
+  // Addresses CRUD
+  app.get(api.addresses.list.path, async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const items = await storage.getAddresses(Number(req.params.companyId));
+    res.json(items);
+  });
+
+  app.post(api.addresses.create.path, async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const item = await storage.createAddress(req.body);
+    res.status(201).json(item);
+  });
+
+  app.delete(api.addresses.delete.path, async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    await storage.deleteAddress(Number(req.params.id));
+    res.sendStatus(204);
+  });
+
+  // Existing routes
   app.get(api.quotes.list.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const quotes = await storage.getQuotes();
-    
-    // Filter based on role
     if (req.user!.role === 'client') {
       return res.json(quotes.filter(q => q.clientId === req.user!.id));
     } else if (req.user!.role === 'carrier') {
-      return res.json(quotes.filter(q => q.status !== 'closed')); // Carriers see open/responded quotes
+      return res.json(quotes.filter(q => q.status !== 'closed'));
     }
-    
     res.json(quotes);
   });
 
@@ -33,9 +76,7 @@ export async function registerRoutes(
       const quote = await storage.createQuote(req.user!.id, input);
       res.status(201).json(quote);
     } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({ message: err.errors[0].message });
-      }
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
       throw err;
     }
   });
@@ -54,9 +95,7 @@ export async function registerRoutes(
       const bid = await storage.createBid(req.user!.id, Number(req.params.quoteId), input);
       res.status(201).json(bid);
     } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({ message: err.errors[0].message });
-      }
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
       throw err;
     }
   });
@@ -65,47 +104,6 @@ export async function registerRoutes(
     if (!req.isAuthenticated() || req.user!.role !== 'client') return res.sendStatus(401);
     const bid = await storage.updateBidStatus(Number(req.params.id), 'accepted');
     res.json(bid);
-  });
-
-  // Helper to seed some data
-  app.post("/api/seed", async (req, res) => {
-    if (process.env.NODE_ENV === "production") return res.sendStatus(404);
-    
-    // Create initial companies
-    const clientCo = await storage.createCompany({ 
-      name: "Acme Corp", 
-      cnpj: "12345678000199", 
-      address: "123 Main St", 
-      type: "client",
-      contactInfo: "contact@acme.com"
-    });
-    
-    const carrierCo = await storage.createCompany({ 
-      name: "Fast Logistics", 
-      cnpj: "98765432000100", 
-      address: "456 Transport Rd", 
-      type: "carrier",
-      contactInfo: "dispatch@fastlogistics.com"
-    });
-
-    // Create users
-    await storage.createUser({ 
-      username: "client@acme.com", 
-      password: "password123", 
-      role: "client", 
-      name: "John Client", 
-      companyId: clientCo.id 
-    });
-    
-    await storage.createUser({ 
-      username: "carrier@fast.com", 
-      password: "password123", 
-      role: "carrier", 
-      name: "Jane Carrier", 
-      companyId: carrierCo.id 
-    });
-    
-    res.json({ message: "Seeded" });
   });
 
   return httpServer;

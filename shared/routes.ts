@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertUserSchema, insertCompanySchema, insertQuoteSchema, insertBidSchema, users, companies, quotes, bids, auditLogs } from './schema';
+import { insertUserSchema, insertCompanySchema, insertQuoteSchema, insertBidSchema, insertAddressSchema, users, companies, quotes, bids, auditLogs, addresses } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -46,6 +46,66 @@ export const api = {
       responses: {
         200: z.custom<typeof users.$inferSelect>(),
         401: errorSchemas.unauthorized,
+      },
+    },
+  },
+  companies: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/companies',
+      input: z.object({ type: z.enum(["client", "carrier"]).optional() }).optional(),
+      responses: {
+        200: z.array(z.custom<typeof companies.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/companies',
+      input: insertCompanySchema,
+      responses: {
+        201: z.custom<typeof companies.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PATCH' as const,
+      path: '/api/companies/:id',
+      input: insertCompanySchema.partial(),
+      responses: {
+        200: z.custom<typeof companies.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/companies/:id',
+      responses: {
+        200: z.custom<typeof companies.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  addresses: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/companies/:companyId/addresses',
+      responses: {
+        200: z.array(z.custom<typeof addresses.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/addresses',
+      input: insertAddressSchema,
+      responses: {
+        201: z.custom<typeof addresses.$inferSelect>(),
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/addresses/:id',
+      responses: {
+        204: z.void(),
       },
     },
   },

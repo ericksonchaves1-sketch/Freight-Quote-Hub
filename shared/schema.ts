@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -15,8 +15,25 @@ export const companies = pgTable("companies", {
   name: text("name").notNull(),
   cnpj: text("cnpj").notNull().unique(),
   contactInfo: text("contact_info"),
-  address: text("address"),
+  address: text("address"), // Legacy field, keeping for compatibility
   type: text("type", { enum: ["client", "carrier"] }).notNull(),
+  status: text("status").default("active").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const addresses = pgTable("addresses", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").references(() => companies.id),
+  street: text("street").notNull(),
+  number: text("number").notNull(),
+  complement: text("complement"),
+  neighborhood: text("neighborhood").notNull(),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  zipCode: text("zip_code").notNull(),
+  country: text("country").default("Brasil").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -33,8 +50,10 @@ export const users = pgTable("users", {
 export const quotes = pgTable("quotes", {
   id: serial("id").primaryKey(),
   clientId: integer("client_id").references(() => users.id).notNull(),
-  origin: text("origin").notNull(),
-  destination: text("destination").notNull(),
+  originAddressId: integer("origin_address_id").references(() => addresses.id),
+  destinationAddressId: integer("destination_address_id").references(() => addresses.id),
+  origin: text("origin").notNull(), // Deprecated but kept for safety
+  destination: text("destination").notNull(), // Deprecated but kept for safety
   weight: decimal("weight").notNull(),
   volume: decimal("volume"),
   cargoType: text("cargo_type").notNull(),
@@ -76,12 +95,28 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 
 export const companiesRelations = relations(companies, ({ many }) => ({
   users: many(users),
+  addresses: many(addresses),
+}));
+
+export const addressesRelations = relations(addresses, ({ one }) => ({
+  company: one(companies, {
+    fields: [addresses.companyId],
+    references: [companies.id],
+  }),
 }));
 
 export const quotesRelations = relations(quotes, ({ one, many }) => ({
   client: one(users, {
     fields: [quotes.clientId],
     references: [users.id],
+  }),
+  originAddress: one(addresses, {
+    fields: [quotes.originAddressId],
+    references: [addresses.id],
+  }),
+  destinationAddress: one(addresses, {
+    fields: [quotes.destinationAddressId],
+    references: [addresses.id],
   }),
   bids: many(bids),
 }));
@@ -100,6 +135,7 @@ export const bidsRelations = relations(bids, ({ one }) => ({
 // === SCHEMAS ===
 
 export const insertCompanySchema = createInsertSchema(companies).omit({ id: true, createdAt: true });
+export const insertAddressSchema = createInsertSchema(addresses).omit({ id: true, createdAt: true });
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertQuoteSchema = createInsertSchema(quotes).omit({ id: true, createdAt: true, clientId: true, status: true });
 export const insertBidSchema = createInsertSchema(bids).omit({ id: true, createdAt: true, carrierId: true, status: true });
@@ -108,6 +144,9 @@ export const insertBidSchema = createInsertSchema(bids).omit({ id: true, created
 
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
+
+export type Address = typeof addresses.$inferSelect;
+export type InsertAddress = z.infer<typeof insertAddressSchema>;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;

@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { users, companies, quotes, bids, auditLogs, type User, type InsertUser, type Quote, type InsertQuote, type Bid, type InsertBid, type Company, type InsertCompany } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { users, companies, quotes, bids, auditLogs, addresses, type User, type InsertUser, type Quote, type InsertQuote, type Bid, type InsertBid, type Company, type InsertCompany, type Address, type InsertAddress } from "@shared/schema";
+import { eq, desc, and } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -13,7 +13,13 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   
   createCompany(company: InsertCompany): Promise<Company>;
-  getCompanies(): Promise<Company[]>;
+  updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company>;
+  getCompany(id: number): Promise<Company | undefined>;
+  getCompanies(type?: "client" | "carrier"): Promise<Company[]>;
+
+  createAddress(address: InsertAddress): Promise<Address>;
+  getAddresses(companyId: number): Promise<Address[]>;
+  deleteAddress(id: number): Promise<void>;
 
   createQuote(userId: number, quote: InsertQuote): Promise<Quote>;
   getQuotes(): Promise<(Quote & { client: User, bids: Bid[] })[]>;
@@ -56,8 +62,34 @@ export class DatabaseStorage implements IStorage {
     return newCompany;
   }
 
-  async getCompanies(): Promise<Company[]> {
+  async updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company> {
+    const [updated] = await db.update(companies).set(company).where(eq(companies.id, id)).returning();
+    return updated;
+  }
+
+  async getCompany(id: number): Promise<Company | undefined> {
+    const [company] = await db.select().from(companies).where(eq(companies.id, id));
+    return company;
+  }
+
+  async getCompanies(type?: "client" | "carrier"): Promise<Company[]> {
+    if (type) {
+      return db.select().from(companies).where(eq(companies.type, type));
+    }
     return db.select().from(companies);
+  }
+
+  async createAddress(address: InsertAddress): Promise<Address> {
+    const [newAddress] = await db.insert(addresses).values(address).returning();
+    return newAddress;
+  }
+
+  async getAddresses(companyId: number): Promise<Address[]> {
+    return db.select().from(addresses).where(eq(addresses.companyId, companyId));
+  }
+
+  async deleteAddress(id: number): Promise<void> {
+    await db.delete(addresses).where(eq(addresses.id, id));
   }
 
   async createQuote(userId: number, quote: InsertQuote): Promise<Quote> {
@@ -93,7 +125,6 @@ export class DatabaseStorage implements IStorage {
 
   async createBid(carrierId: number, quoteId: number, bid: InsertBid): Promise<Bid> {
     const [newBid] = await db.insert(bids).values({ ...bid, carrierId, quoteId }).returning();
-    // Update quote status to responded if it's currently open
     await db.update(quotes).set({ status: 'responded' }).where(eq(quotes.id, quoteId));
     return newBid;
   }
