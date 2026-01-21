@@ -100,7 +100,8 @@ export const api = {
       method: 'POST' as const,
       path: '/api/carriers',
       input: insertCompanySchema.extend({
-        type: z.literal("carrier").default("carrier")
+        type: z.literal("carrier").default("carrier"),
+        tiposFrete: z.string().optional().or(z.literal("")),
       }),
       responses: {
         201: z.custom<typeof companies.$inferSelect>(),
@@ -110,7 +111,9 @@ export const api = {
     update: {
       method: 'PATCH' as const,
       path: '/api/carriers/:id',
-      input: insertCompanySchema.partial(),
+      input: insertCompanySchema.partial().extend({
+        tiposFrete: z.string().optional().or(z.literal("")),
+      }),
       responses: {
         200: z.custom<typeof companies.$inferSelect>(),
         404: errorSchemas.notFound,
