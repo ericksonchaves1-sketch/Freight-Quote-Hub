@@ -102,6 +102,7 @@ export const api = {
       input: insertCompanySchema.extend({
         type: z.literal("carrier").default("carrier"),
         tiposFrete: z.string().optional().or(z.literal("")),
+        regioesAtendidas: z.string().optional().or(z.literal("")),
       }),
       responses: {
         201: z.custom<typeof companies.$inferSelect>(),
@@ -113,6 +114,7 @@ export const api = {
       path: '/api/carriers/:id',
       input: insertCompanySchema.partial().extend({
         tiposFrete: z.string().optional().or(z.literal("")),
+        regioesAtendidas: z.string().optional().or(z.literal("")),
       }),
       responses: {
         200: z.custom<typeof companies.$inferSelect>(),
