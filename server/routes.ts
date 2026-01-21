@@ -41,6 +41,41 @@ export async function registerRoutes(
     res.json(item);
   });
 
+  // Carriers CRUD
+  app.get(api.carriers.list.path, async (req, res) => {
+    const user = req.user as User | undefined;
+    if (!req.isAuthenticated() || user?.role !== 'admin') return res.sendStatus(401);
+    const items = await storage.getCompanies("carrier");
+    res.json(items);
+  });
+
+  app.post(api.carriers.create.path, async (req, res) => {
+    const user = req.user as User | undefined;
+    if (!req.isAuthenticated() || user?.role !== 'admin') return res.sendStatus(401);
+    try {
+      const input = api.carriers.create.input.parse({ ...req.body, type: "carrier" });
+      const item = await storage.createCompany(input);
+      res.status(201).json(item);
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      throw err;
+    }
+  });
+
+  app.patch(api.carriers.update.path, async (req, res) => {
+    const user = req.user as User | undefined;
+    if (!req.isAuthenticated() || user?.role !== 'admin') return res.sendStatus(401);
+    const item = await storage.updateCompany(Number(req.params.id), req.body);
+    res.json(item);
+  });
+
+  app.delete(api.carriers.delete.path, async (req, res) => {
+    const user = req.user as User | undefined;
+    if (!req.isAuthenticated() || user?.role !== 'admin') return res.sendStatus(401);
+    await storage.updateCompany(Number(req.params.id), { status: "deleted", active: false });
+    res.sendStatus(204);
+  });
+
   // Addresses CRUD
   app.get(api.addresses.list.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

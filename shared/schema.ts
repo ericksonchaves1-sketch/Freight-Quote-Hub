@@ -22,6 +22,8 @@ export const companies = pgTable("companies", {
   active: boolean("active").default(true).notNull(),
   email: text("email"),
   phone: text("phone"),
+  cargoTypes: text("cargo_types"), // comma separated or JSON
+  regions: text("regions"), // comma separated or JSON
   createdAt: timestamp("created_at").defaultNow(),
 });
 

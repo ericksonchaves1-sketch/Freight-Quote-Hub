@@ -88,6 +88,43 @@ export const api = {
       },
     },
   },
+  carriers: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/carriers',
+      responses: {
+        200: z.array(z.custom<typeof companies.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/carriers',
+      input: insertCompanySchema.extend({
+        type: z.literal("carrier").default("carrier")
+      }),
+      responses: {
+        201: z.custom<typeof companies.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PATCH' as const,
+      path: '/api/carriers/:id',
+      input: insertCompanySchema.partial(),
+      responses: {
+        200: z.custom<typeof companies.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/carriers/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
   addresses: {
     list: {
       method: 'GET' as const,
