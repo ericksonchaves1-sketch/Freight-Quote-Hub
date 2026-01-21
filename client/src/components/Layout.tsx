@@ -28,6 +28,7 @@ export function Layout({ children }: LayoutProps) {
     { label: "Quotes", href: "/quotes", icon: Package },
     ...(user?.role === "admin" ? [
       { label: "Clientes", href: "/clients", icon: UserCircle },
+      { label: "Transportadoras", href: "/carriers", icon: Truck },
       { label: "Audit Logs", href: "/admin", icon: Settings }
     ] : []),
   ];
