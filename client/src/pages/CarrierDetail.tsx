@@ -70,7 +70,8 @@ export default function CarrierDetail() {
       phone: "",
       status: "active",
       type: "carrier" as const,
-      tiposFrete: ""
+      tiposFrete: "",
+      regioesAtendidas: ""
     }
   });
 
@@ -84,7 +85,8 @@ export default function CarrierDetail() {
         phone: carrier.phone || "",
         status: carrier.status as any,
         type: "carrier" as const,
-        tiposFrete: (carrier as any).tiposFrete || ""
+        tiposFrete: (carrier as any).tiposFrete || "",
+        regioesAtendidas: (carrier as any).regioesAtendidas || ""
       });
     }
   }, [carrier, form]);
@@ -281,6 +283,20 @@ export default function CarrierDetail() {
                   ))}
                 </div>
               </div>
+
+              <FormField
+                control={form.control}
+                name="regioesAtendidas"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Regiões Atendidas</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Ex: Sul, Sudeste, Nacional" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
                 {saveMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
