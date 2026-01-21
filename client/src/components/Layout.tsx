@@ -8,7 +8,8 @@ import {
   UserCircle,
   Truck,
   Menu,
-  X
+  X,
+  FileText
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,8 @@ export function Layout({ children }: LayoutProps) {
     ...(user?.role === "admin" ? [
       { label: "Clientes", href: "/clients", icon: UserCircle },
       { label: "Transportadoras", href: "/carriers", icon: Truck },
-      { label: "Audit Logs", href: "/admin", icon: Settings }
+      { label: "Audit Logs", href: "/admin", icon: Settings },
+      { label: "Relatórios", href: "/reports", icon: FileText }
     ] : []),
   ];
 
