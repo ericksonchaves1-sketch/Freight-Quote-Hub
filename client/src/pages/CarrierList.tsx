@@ -16,6 +16,14 @@ import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
+const FREIGHT_TYPES = [
+  { id: "rodoviario", label: "Rodoviário" },
+  { id: "fracionado", label: "Fracionado" },
+  { id: "lotacao", label: "Lotação" },
+  { id: "refrigerado", label: "Refrigerado" },
+  { id: "perigoso", label: "Perigoso" },
+];
+
 export default function CarrierList() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -80,7 +88,7 @@ export default function CarrierList() {
               <TableRow>
                 <TableHead>Razão Social</TableHead>
                 <TableHead>CNPJ</TableHead>
-                <TableHead>E-mail</TableHead>
+                <TableHead>Tipos de Frete</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -88,13 +96,13 @@ export default function CarrierList() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
                   </TableCell>
                 </TableRow>
               ) : carriers?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                     Nenhuma transportadora cadastrada.
                   </TableCell>
                 </TableRow>
@@ -103,7 +111,18 @@ export default function CarrierList() {
                   <TableRow key={carrier.id}>
                     <TableCell className="font-medium">{carrier.name}</TableCell>
                     <TableCell>{carrier.cnpj}</TableCell>
-                    <TableCell>{carrier.email || "-"}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {((carrier as any).tiposFrete || "").split(",").filter(Boolean).map((typeId: string) => {
+                          const type = FREIGHT_TYPES.find(t => t.id === typeId);
+                          return (
+                            <Badge key={typeId} variant="outline" className="capitalize text-[10px] h-4">
+                              {type?.label || typeId}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Badge variant={carrier.status === "active" ? "default" : "secondary"}>
                         {carrier.status === "active" ? "Ativo" : "Inativo"}
