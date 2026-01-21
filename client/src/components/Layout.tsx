@@ -26,7 +26,10 @@ export function Layout({ children }: LayoutProps) {
   const navItems = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Quotes", href: "/quotes", icon: Package },
-    ...(user?.role === "admin" ? [{ label: "Audit Logs", href: "/admin", icon: Settings }] : []),
+    ...(user?.role === "admin" ? [
+      { label: "Clientes", href: "/clients", icon: UserCircle },
+      { label: "Audit Logs", href: "/admin", icon: Settings }
+    ] : []),
   ];
 
   return (

@@ -9,6 +9,8 @@ import Dashboard from "@/pages/Dashboard";
 import QuoteList from "@/pages/QuoteList";
 import QuoteDetail from "@/pages/QuoteDetail";
 import AdminPage from "@/pages/Admin";
+import ClientList from "@/pages/ClientList";
+import ClientDetail from "@/pages/ClientDetail";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 
@@ -47,6 +49,15 @@ function Router() {
       </Route>
       <Route path="/admin">
         <ProtectedRoute component={AdminPage} />
+      </Route>
+      <Route path="/clients">
+        <ProtectedRoute component={ClientList} />
+      </Route>
+      <Route path="/clients/new">
+        <ProtectedRoute component={ClientDetail} />
+      </Route>
+      <Route path="/clients/:id">
+        <ProtectedRoute component={ClientDetail} />
       </Route>
       
       {/* Root redirect */}
