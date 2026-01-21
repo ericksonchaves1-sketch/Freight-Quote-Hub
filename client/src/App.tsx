@@ -11,6 +11,8 @@ import QuoteDetail from "@/pages/QuoteDetail";
 import AdminPage from "@/pages/Admin";
 import ClientList from "@/pages/ClientList";
 import ClientDetail from "@/pages/ClientDetail";
+import CarrierList from "@/pages/CarrierList";
+import CarrierDetail from "@/pages/CarrierDetail";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 
@@ -58,6 +60,15 @@ function Router() {
       </Route>
       <Route path="/clients/:id">
         <ProtectedRoute component={ClientDetail} />
+      </Route>
+      <Route path="/carriers">
+        <ProtectedRoute component={CarrierList} />
+      </Route>
+      <Route path="/carriers/new">
+        <ProtectedRoute component={CarrierDetail} />
+      </Route>
+      <Route path="/carriers/:id">
+        <ProtectedRoute component={CarrierDetail} />
       </Route>
       
       {/* Root redirect */}

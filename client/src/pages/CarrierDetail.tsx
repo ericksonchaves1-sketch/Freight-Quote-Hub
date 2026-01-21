@@ -1,0 +1,250 @@
+import { Layout } from "@/components/Layout";
+import { useAuth } from "@/hooks/use-auth";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { insertCompanySchema, type Company } from "@shared/schema";
+import { api, buildUrl } from "@shared/routes";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRoute, useLocation } from "wouter";
+import { 
+  Form, 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { ShieldAlert, Loader2, ArrowLeft } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
+import { z } from "zod";
+
+export default function CarrierDetail() {
+  const [, params] = useRoute("/carriers/:id");
+  const isNew = params?.id === "new";
+  const carrierId = isNew ? null : Number(params?.id);
+  const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: carrier, isLoading: isLoadingCarrier } = useQuery({
+    queryKey: [api.companies.get.path, carrierId],
+    queryFn: async () => {
+      const res = await fetch(buildUrl(api.companies.get.path, { id: carrierId! }));
+      if (!res.ok) throw new Error("Carrier not found");
+      return api.companies.get.responses[200].parse(await res.json());
+    },
+    enabled: !!carrierId
+  });
+
+  const form = useForm({
+    resolver: zodResolver(insertCompanySchema.extend({
+      email: z.string().email("E-mail inválido").optional().or(z.literal("")),
+      cnpj: z.string().min(14, "CNPJ deve ter 14 dígitos"),
+    })),
+    defaultValues: {
+      name: "",
+      tradeName: "",
+      cnpj: "",
+      email: "",
+      phone: "",
+      status: "active",
+      type: "carrier" as const
+    }
+  });
+
+  useEffect(() => {
+    if (carrier) {
+      form.reset({
+        name: carrier.name,
+        tradeName: (carrier as any).tradeName || "",
+        cnpj: carrier.cnpj,
+        email: carrier.email || "",
+        phone: carrier.phone || "",
+        status: carrier.status as any,
+        type: "carrier" as const
+      });
+    }
+  }, [carrier, form]);
+
+  const saveMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const url = isNew ? api.carriers.create.path : buildUrl(api.carriers.update.path, { id: carrierId! });
+      const method = isNew ? api.carriers.create.method : api.carriers.update.method;
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, type: "carrier" })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to save carrier");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [api.carriers.list.path] });
+      toast({ title: "Sucesso", description: `Transportadora ${isNew ? "cadastrada" : "atualizada"} com sucesso.` });
+      setLocation("/carriers");
+    },
+    onError: (error) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    }
+  });
+
+  if (user?.role !== "admin") {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center h-[50vh] text-center">
+          <ShieldAlert className="w-16 h-16 text-destructive mb-4" />
+          <h1 className="text-2xl font-bold">Acesso Negado</h1>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (carrierId && isLoadingCarrier) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-[50vh]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => setLocation("/carriers")}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-display font-bold">
+              {isNew ? "Nova Transportadora" : "Editar Transportadora"}
+            </h1>
+            <p className="text-muted-foreground">
+              {isNew ? "Preencha as informações para cadastrar uma nova transportadora" : "Atualize os dados da transportadora"}
+            </p>
+          </div>
+        </div>
+
+        <Card className="p-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit((data) => saveMutation.mutate(data))} className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Razão Social</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Ex: Transportes Rápidos Ltda" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="tradeName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome Fantasia</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Ex: TransRápido" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="cnpj"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CNPJ</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="00.000.000/0000-00" maxLength={18} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-mail</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="email" placeholder="contato@transportadora.com" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="(00) 00000-0000" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="active">Ativo</SelectItem>
+                        <SelectItem value="inactive">Inativo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
+                {saveMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {isNew ? "Cadastrar Transportadora" : "Salvar Alterações"}
+              </Button>
+            </form>
+          </Form>
+        </Card>
+      </div>
+    </Layout>
+  );
+}
