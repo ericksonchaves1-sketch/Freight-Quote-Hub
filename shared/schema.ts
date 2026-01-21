@@ -13,11 +13,13 @@ export const bidStatus = ["pending", "accepted", "rejected"] as const;
 export const companies = pgTable("companies", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  tradeName: text("trade_name"),
   cnpj: text("cnpj").notNull().unique(),
   contactInfo: text("contact_info"),
   address: text("address"), // Legacy field
   type: text("type", { enum: ["client", "carrier"] }).notNull(),
   status: text("status").default("active").notNull(),
+  active: boolean("active").default(true).notNull(),
   email: text("email"),
   phone: text("phone"),
   createdAt: timestamp("created_at").defaultNow(),

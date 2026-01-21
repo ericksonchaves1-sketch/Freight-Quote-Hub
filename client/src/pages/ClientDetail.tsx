@@ -74,6 +74,7 @@ export default function ClientDetail() {
     })),
     defaultValues: {
       name: "",
+      tradeName: "",
       cnpj: "",
       email: "",
       phone: "",
@@ -86,6 +87,7 @@ export default function ClientDetail() {
     if (client) {
       form.reset({
         name: client.name,
+        tradeName: (client as any).tradeName || "",
         cnpj: client.cnpj,
         email: client.email || "",
         phone: client.phone || "",
@@ -198,6 +200,19 @@ export default function ClientDetail() {
                           <FormLabel>Razão Social</FormLabel>
                           <FormControl>
                             <Input {...field} placeholder="Ex: Acme Corp Ltda" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="tradeName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome Fantasia</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Ex: Acme" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
