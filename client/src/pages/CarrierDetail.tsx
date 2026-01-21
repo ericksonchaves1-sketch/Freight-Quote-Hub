@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Select, 
   SelectContent, 
@@ -28,6 +29,14 @@ import { ShieldAlert, Loader2, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { z } from "zod";
+
+const FREIGHT_TYPES = [
+  { id: "rodoviario", label: "Rodoviário" },
+  { id: "fracionado", label: "Fracionado" },
+  { id: "lotacao", label: "Lotação" },
+  { id: "refrigerado", label: "Refrigerado" },
+  { id: "perigoso", label: "Carga Perigosa" },
+];
 
 export default function CarrierDetail() {
   const [, params] = useRoute("/carriers/:id");
@@ -60,7 +69,8 @@ export default function CarrierDetail() {
       email: "",
       phone: "",
       status: "active",
-      type: "carrier" as const
+      type: "carrier" as const,
+      tiposFrete: ""
     }
   });
 
@@ -73,7 +83,8 @@ export default function CarrierDetail() {
         email: carrier.email || "",
         phone: carrier.phone || "",
         status: carrier.status as any,
-        type: "carrier" as const
+        type: "carrier" as const,
+        tiposFrete: (carrier as any).tiposFrete || ""
       });
     }
   }, [carrier, form]);
@@ -236,6 +247,40 @@ export default function CarrierDetail() {
                   </FormItem>
                 )}
               />
+
+              <div className="space-y-4">
+                <FormLabel>Tipos de Frete</FormLabel>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {FREIGHT_TYPES.map((type) => (
+                    <FormField
+                      key={type.id}
+                      control={form.control}
+                      name="tiposFrete"
+                      render={({ field }) => {
+                        const selectedTypes = field.value ? field.value.split(",") : [];
+                        return (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={selectedTypes.includes(type.id)}
+                                onCheckedChange={(checked) => {
+                                  const newTypes = checked
+                                    ? [...selectedTypes, type.id]
+                                    : selectedTypes.filter((t) => t !== type.id);
+                                  field.onChange(newTypes.join(","));
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal cursor-pointer">
+                              {type.label}
+                            </FormLabel>
+                          </FormItem>
+                        );
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
 
               <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
                 {saveMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
