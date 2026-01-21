@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { insertUserSchema, insertCompanySchema, insertQuoteSchema, insertBidSchema, insertAddressSchema, users, companies, quotes, bids, auditLogs, addresses } from './schema';
+import { insertUserSchema, insertCompanySchema, insertQuoteSchema, insertBidSchema, insertAddressSchema, users, companies, quotes, bids, addresses, type User, type InsertUser, type InsertQuote, type InsertBid } from './schema';
+
+// Export types for hooks
+export type { User, InsertUser, InsertQuote, InsertBid };
 
 export const errorSchemas = {
   validation: z.object({
@@ -20,7 +23,7 @@ export const api = {
       path: '/api/login',
       input: z.object({ username: z.string(), password: z.string() }),
       responses: {
-        200: z.custom<typeof users.$inferSelect>(),
+        200: z.custom<User>(),
         401: errorSchemas.unauthorized,
       },
     },
@@ -36,7 +39,7 @@ export const api = {
       path: '/api/register',
       input: insertUserSchema,
       responses: {
-        201: z.custom<typeof users.$inferSelect>(),
+        201: z.custom<User>(),
         400: errorSchemas.validation,
       },
     },
@@ -44,7 +47,7 @@ export const api = {
       method: 'GET' as const,
       path: '/api/user',
       responses: {
-        200: z.custom<typeof users.$inferSelect>(),
+        200: z.custom<User>(),
         401: errorSchemas.unauthorized,
       },
     },
@@ -114,7 +117,7 @@ export const api = {
       method: 'GET' as const,
       path: '/api/quotes',
       responses: {
-        200: z.array(z.custom<typeof quotes.$inferSelect & { client: typeof users.$inferSelect, bids: typeof bids.$inferSelect[] }>()),
+        200: z.array(z.custom<typeof quotes.$inferSelect & { client: User, bids: typeof bids.$inferSelect[] }>()),
       },
     },
     create: {
@@ -130,7 +133,7 @@ export const api = {
       method: 'GET' as const,
       path: '/api/quotes/:id',
       responses: {
-        200: z.custom<typeof quotes.$inferSelect & { client: typeof users.$inferSelect, bids: (typeof bids.$inferSelect & { carrier: typeof users.$inferSelect })[] }>(),
+        200: z.custom<typeof quotes.$inferSelect & { client: User, bids: (typeof bids.$inferSelect & { carrier: User })[] }>(),
         404: errorSchemas.notFound,
       },
     },

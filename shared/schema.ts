@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, decimal } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -15,7 +15,7 @@ export const companies = pgTable("companies", {
   name: text("name").notNull(),
   cnpj: text("cnpj").notNull().unique(),
   contactInfo: text("contact_info"),
-  address: text("address"), // Legacy field, keeping for compatibility
+  address: text("address"), // Legacy field
   type: text("type", { enum: ["client", "carrier"] }).notNull(),
   status: text("status").default("active").notNull(),
   email: text("email"),
@@ -52,8 +52,8 @@ export const quotes = pgTable("quotes", {
   clientId: integer("client_id").references(() => users.id).notNull(),
   originAddressId: integer("origin_address_id").references(() => addresses.id),
   destinationAddressId: integer("destination_address_id").references(() => addresses.id),
-  origin: text("origin").notNull(), // Deprecated but kept for safety
-  destination: text("destination").notNull(), // Deprecated but kept for safety
+  origin: text("origin").notNull(), 
+  destination: text("destination").notNull(),
   weight: decimal("weight").notNull(),
   volume: decimal("volume"),
   cargoType: text("cargo_type").notNull(),
