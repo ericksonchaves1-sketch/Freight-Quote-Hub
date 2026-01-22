@@ -129,6 +129,14 @@ export const api = {
         404: errorSchemas.notFound,
       },
     },
+    get: {
+      method: 'GET' as const,
+      path: '/api/carriers/:id',
+      responses: {
+        200: z.custom<typeof companies.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
     delete: {
       method: 'DELETE' as const,
       path: '/api/carriers/:id',

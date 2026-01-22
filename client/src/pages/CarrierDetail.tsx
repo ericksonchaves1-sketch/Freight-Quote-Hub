@@ -48,11 +48,11 @@ export default function CarrierDetail() {
   const queryClient = useQueryClient();
 
   const { data: carrier, isLoading: isLoadingCarrier } = useQuery({
-    queryKey: [api.companies.get.path, carrierId],
+    queryKey: [api.carriers.get.path, carrierId],
     queryFn: async () => {
-      const res = await fetch(buildUrl(api.companies.get.path, { id: carrierId! }));
+      const res = await fetch(buildUrl(api.carriers.get.path, { id: carrierId! }));
       if (!res.ok) throw new Error("Carrier not found");
-      return api.companies.get.responses[200].parse(await res.json());
+      return api.carriers.get.responses[200].parse(await res.json());
     },
     enabled: !!carrierId
   });

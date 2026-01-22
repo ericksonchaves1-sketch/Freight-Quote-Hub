@@ -41,6 +41,14 @@ export async function registerRoutes(
     res.json(item);
   });
 
+  app.get(api.companies.get.path, async (req, res) => {
+    const user = req.user as User | undefined;
+    if (!req.isAuthenticated() || user?.role !== 'admin') return res.sendStatus(401);
+    const item = await storage.getCompany(Number(req.params.id));
+    if (!item) return res.status(404).json({ message: "Not found" });
+    res.json(item);
+  });
+
   app.delete(api.companies.delete.path, async (req, res) => {
     const user = req.user as User | undefined;
     if (!req.isAuthenticated() || user?.role !== 'admin') return res.sendStatus(401);
@@ -73,6 +81,14 @@ export async function registerRoutes(
     const user = req.user as User | undefined;
     if (!req.isAuthenticated() || user?.role !== 'admin') return res.sendStatus(401);
     const item = await storage.updateCompany(Number(req.params.id), req.body);
+    res.json(item);
+  });
+
+  app.get(api.carriers.get.path, async (req, res) => {
+    const user = req.user as User | undefined;
+    if (!req.isAuthenticated() || user?.role !== 'admin') return res.sendStatus(401);
+    const item = await storage.getCompany(Number(req.params.id));
+    if (!item || item.type !== 'carrier') return res.status(404).json({ message: "Not found" });
     res.json(item);
   });
 
