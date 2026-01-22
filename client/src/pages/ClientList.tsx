@@ -81,7 +81,7 @@ export default function ClientList() {
             <TableHeader>
               <TableRow>
                 <TableHead>Razão Social</TableHead>
-                <TableHead>CNPJ</TableHead>
+                <TableHead>CPF / CNPJ</TableHead>
                 <TableHead>E-mail</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>

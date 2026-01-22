@@ -70,7 +70,10 @@ export default function ClientDetail() {
   const form = useForm({
     resolver: zodResolver(insertCompanySchema.extend({
       email: z.string().email("E-mail inválido").optional().or(z.literal("")),
-      cnpj: z.string().min(14, "CNPJ deve ter 14 dígitos"),
+      cnpj: z.string().refine((val) => {
+        const digits = val.replace(/\D/g, "");
+        return digits.length === 11 || digits.length === 14;
+      }, "Documento inválido (CPF ou CNPJ)"),
     })),
     defaultValues: {
       name: "",
@@ -223,9 +226,29 @@ export default function ClientDetail() {
                       name="cnpj"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>CNPJ</FormLabel>
+                          <FormLabel>CPF / CNPJ</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="00.000.000/0000-00" maxLength={18} />
+                            <Input 
+                              {...field} 
+                              placeholder="000.000.000-00 ou 00.000.000/0000-00" 
+                              maxLength={18}
+                              onChange={(e) => {
+                                let val = e.target.value.replace(/\D/g, "");
+                                if (val.length <= 11) {
+                                  // CPF Mask
+                                  val = val.replace(/(\d{3})(\d)/, "$1.$2");
+                                  val = val.replace(/(\d{3})(\d)/, "$1.$2");
+                                  val = val.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+                                } else {
+                                  // CNPJ Mask
+                                  val = val.replace(/^(\d{2})(\d)/, "$1.$2");
+                                  val = val.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+                                  val = val.replace(/\.(\d{3})(\d)/, ".$1/$2");
+                                  val = val.replace(/(\d{4})(\d)/, "$1-$2");
+                                }
+                                field.onChange(val);
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

@@ -88,7 +88,7 @@ export default function CarrierList() {
             <TableHeader>
               <TableRow>
                 <TableHead>Razão Social</TableHead>
-                <TableHead>CNPJ</TableHead>
+                <TableHead>CPF / CNPJ</TableHead>
                 <TableHead>Tipos de Frete</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>

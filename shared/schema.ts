@@ -14,7 +14,7 @@ export const companies = pgTable("companies", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   tradeName: text("trade_name"),
-  cnpj: text("cnpj").notNull().unique(),
+  cnpj: text("cnpj").notNull().unique(), // Holds both CPF (11) and CNPJ (14)
   contactInfo: text("contact_info"),
   address: text("address"), // Legacy field
   type: text("type", { enum: ["client", "carrier"] }).notNull(),
