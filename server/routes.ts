@@ -100,25 +100,43 @@ export async function registerRoutes(
   });
 
   // Addresses CRUD
-  app.get(api.addresses.list.path, async (req, res) => {
+  app.get("/api/companies/:companyId/addresses", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const items = await storage.getAddresses(Number(req.params.companyId));
     res.json(items);
   });
 
-  app.post(api.addresses.create.path, async (req, res) => {
+  app.post("/api/companies/:companyId/addresses", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const item = await storage.createAddress(req.body);
+    const item = await storage.createAddress({
+      ...req.body,
+      companyId: Number(req.params.companyId)
+    });
     res.status(201).json(item);
   });
 
-  app.put(api.addresses.update.path, async (req, res) => {
+  app.get("/api/carriers/:carrierId/addresses", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const items = await storage.getAddresses(Number(req.params.carrierId));
+    res.json(items);
+  });
+
+  app.post("/api/carriers/:carrierId/addresses", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const item = await storage.createAddress({
+      ...req.body,
+      companyId: Number(req.params.carrierId)
+    });
+    res.status(201).json(item);
+  });
+
+  app.put("/api/addresses/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const item = await storage.updateAddress(Number(req.params.id), req.body);
     res.json(item);
   });
 
-  app.delete(api.addresses.delete.path, async (req, res) => {
+  app.delete("/api/addresses/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     await storage.deleteAddress(Number(req.params.id));
     res.sendStatus(204);
