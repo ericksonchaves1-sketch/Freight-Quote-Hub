@@ -114,7 +114,7 @@ export default function CarrierList() {
                     <TableCell>{carrier.cnpj}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {((carrier as any).tiposFrete || "").split(",").filter(Boolean).map((typeId: string) => {
+                        {((carrier as any).freightTypes || "").split(",").filter(Boolean).map((typeId: string) => {
                           const type = FREIGHT_TYPES.find(t => t.id === typeId);
                           return (
                             <Badge key={typeId} variant="outline" className="capitalize text-[10px] h-4">

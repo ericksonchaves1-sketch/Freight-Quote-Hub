@@ -70,7 +70,7 @@ export default function CarrierDetail() {
       phone: "",
       status: "active",
       type: "carrier" as const,
-      tiposFrete: "",
+      freightTypes: "",
       regioesAtendidas: ""
     }
   });
@@ -85,7 +85,7 @@ export default function CarrierDetail() {
         phone: carrier.phone || "",
         status: (carrier.status as any) || "active",
         type: "carrier" as const,
-        tiposFrete: (carrier as any).tiposFrete || "",
+        freightTypes: (carrier as any).freightTypes || "",
         regioesAtendidas: (carrier as any).regioesAtendidas || ""
       });
     }
@@ -257,7 +257,7 @@ export default function CarrierDetail() {
                     <FormField
                       key={type.id}
                       control={form.control}
-                      name="tiposFrete"
+                      name="freightTypes"
                       render={({ field }) => {
                         const selectedTypes = field.value ? field.value.split(",") : [];
                         return (
