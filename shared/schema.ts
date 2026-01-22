@@ -23,8 +23,7 @@ export const companies = pgTable("companies", {
   phone: text("phone"),
   cargoTypes: text("cargo_types"), // comma separated or JSON
   freightTypes: text("freight_types"), // Standardized field for carrier freight types
-  regioesAtendidas: text("regioes_atendidas"), // Field for carrier served regions
-  regions: text("regions"), // Legacy/other field
+  regions: text("regions"), // Standardized field for carrier served regions
   createdAt: timestamp("created_at").defaultNow(),
 });
 

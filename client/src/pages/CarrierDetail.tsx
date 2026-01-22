@@ -71,7 +71,7 @@ export default function CarrierDetail() {
       status: "active",
       type: "carrier" as const,
       freightTypes: "",
-      regioesAtendidas: ""
+      regions: ""
     }
   });
 
@@ -86,7 +86,7 @@ export default function CarrierDetail() {
         status: (carrier.status as any) || "active",
         type: "carrier" as const,
         freightTypes: (carrier as any).freightTypes || "",
-        regioesAtendidas: (carrier as any).regioesAtendidas || ""
+        regions: (carrier as any).regions || ""
       });
     }
   }, [carrier, form]);
@@ -286,7 +286,7 @@ export default function CarrierDetail() {
 
               <FormField
                 control={form.control}
-                name="regioesAtendidas"
+                name="regions"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Regiões Atendidas</FormLabel>
