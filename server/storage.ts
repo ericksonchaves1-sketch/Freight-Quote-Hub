@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { users, companies, quotes, bids, auditLogs, addresses, type User, type InsertUser, type Quote, type InsertQuote, type Bid, type InsertBid, type Company, type InsertCompany, type Address, type InsertAddress } from "@shared/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, ne } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
@@ -80,9 +80,9 @@ export class DatabaseStorage implements IStorage {
 
   async getCompanies(type?: "client" | "carrier"): Promise<Company[]> {
     if (type) {
-      return db.select().from(companies).where(eq(companies.type, type));
+      return db.select().from(companies).where(and(eq(companies.type, type), ne(companies.status, "deleted")));
     }
-    return db.select().from(companies);
+    return db.select().from(companies).where(ne(companies.status, "deleted"));
   }
 
   async createAddress(address: InsertAddress): Promise<Address> {

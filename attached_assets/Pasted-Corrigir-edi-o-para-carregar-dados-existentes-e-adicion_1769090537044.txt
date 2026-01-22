@@ -1,0 +1,41 @@
+Corrigir edição para carregar dados existentes e adicionar opção de excluir (soft delete) para Clientes e Transportadoras.
+
+1) CARREGAR DADOS NA EDIÇÃO
+Problema: Ao acessar /clients/:id e /carriers/:id os campos ficam em branco.
+Objetivo: Ao abrir a tela com :id, buscar no backend e preencher o formulário.
+
+Frontend:
+- Em ClientEdit e CarrierEdit (ou páginas equivalentes), usar useParams() para pegar id.
+- Se id existir:
+  - chamar GET /api/companies/:id (clientes) e GET /api/carriers/:id (transportadoras)
+  - setar o state inicial do form com os dados retornados (razaoSocial, tradeName/nomeFantasia, document/cpfCnpj, email, phone, status, freightTypes/tiposFrete, regions/regioes)
+  - mostrar loading enquanto carrega
+  - se erro 404, mostrar mensagem “Registro não encontrado”.
+- Garantir mapeamento de campos: se API retorna snake_case (trade_name, freight_types, cargo_types, regions) mapear para os nomes usados no form.
+- Para status: tratar null como 'active'.
+- Para checkboxes “Tipos de Frete”: marcar conforme freight_types/tiposFrete do registro.
+
+Backend:
+- Garantir que existam endpoints GET /api/companies/:id e GET /api/carriers/:id retornando um único registro por id.
+- Garantir que o retorno contenha os campos usados no form (inclusive status, freight_types e regions).
+
+2) EXCLUIR CADASTRO (SEM APAGAR DO BANCO)
+Objetivo: Adicionar botão “Excluir” nas telas de edição e ação na listagem.
+Regra: usar soft delete -> status = 'deleted' (não deletar fisicamente).
+
+Backend:
+- Adicionar endpoint:
+  - DELETE /api/companies/:id -> set status='deleted'
+  - DELETE /api/carriers/:id -> set status='deleted'
+- Listagens devem filtrar por padrão status != 'deleted' (exibir somente active/inactive).
+- Registrar audit log (DELETE_SOFT ou STATUS_CHANGED).
+
+Frontend:
+- Na tela de editar cliente e transportadora, adicionar botão “Excluir Cadastro” com confirmação (modal).
+- Ao confirmar:
+  - chamar DELETE endpoint
+  - voltar para a listagem
+  - mostrar toast “Cadastro excluído”.
+- Na listagem, adicionar ação “Excluir” (opcional) e/ou esconder registros deleted.
+
+Não criar novas features além disso. Apenas corrigir carregamento e incluir exclusão soft delete.

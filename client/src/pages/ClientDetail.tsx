@@ -151,6 +151,23 @@ export default function ClientDetail() {
     }
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(buildUrl(api.companies.delete.path, { id: clientId! }), {
+        method: "DELETE"
+      });
+      if (!res.ok) throw new Error("Failed to delete client");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.companies.list.path] });
+      toast({ title: "Cadastro excluído" });
+      setLocation("/clients");
+    },
+    onError: (error) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    }
+  });
+
   if (user?.role !== "admin") {
     return (
       <Layout>
@@ -307,10 +324,27 @@ export default function ClientDetail() {
                     )}
                   />
 
-                  <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
-                    {saveMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    {isNew ? "Cadastrar Cliente" : "Salvar Alterações"}
-                  </Button>
+                  <div className="flex gap-4">
+                    <Button type="submit" className="flex-1" disabled={saveMutation.isPending}>
+                      {saveMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      {isNew ? "Cadastrar Cliente" : "Salvar Alterações"}
+                    </Button>
+                    {!isNew && (
+                      <Button 
+                        type="button" 
+                        variant="destructive" 
+                        disabled={deleteMutation.isPending}
+                        onClick={() => {
+                          if (confirm("Tem certeza que deseja excluir este cadastro?")) {
+                            deleteMutation.mutate();
+                          }
+                        }}
+                      >
+                        {deleteMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        Excluir Cadastro
+                      </Button>
+                    )}
+                  </div>
                 </form>
               </Form>
             </Card>

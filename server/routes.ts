@@ -41,6 +41,13 @@ export async function registerRoutes(
     res.json(item);
   });
 
+  app.delete(api.companies.delete.path, async (req, res) => {
+    const user = req.user as User | undefined;
+    if (!req.isAuthenticated() || user?.role !== 'admin') return res.sendStatus(401);
+    await storage.updateCompany(Number(req.params.id), { status: "deleted" });
+    res.sendStatus(204);
+  });
+
   // Carriers CRUD
   app.get(api.carriers.list.path, async (req, res) => {
     const user = req.user as User | undefined;
