@@ -82,13 +82,13 @@ export default function CarrierDetail() {
     if (carrier) {
       form.reset({
         name: carrier.name,
-        tradeName: (carrier as any).trade_name || carrier.tradeName || "",
+        tradeName: (carrier as any).trade_name || (carrier as any).tradeName || "",
         cnpj: carrier.cnpj,
         email: carrier.email || "",
         phone: carrier.phone || "",
         status: (carrier.status as any) || "active",
         type: "carrier" as const,
-        freightTypes: (carrier as any).freight_types || carrier.freightTypes || "",
+        freightTypes: (carrier as any).freight_types || (carrier as any).freightTypes || "",
         regions: (carrier as any).regions || ""
       });
     }
