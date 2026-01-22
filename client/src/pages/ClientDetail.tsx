@@ -90,7 +90,7 @@ export default function ClientDetail() {
     if (client) {
       form.reset({
         name: client.name,
-        tradeName: (client as any).tradeName || "",
+        tradeName: (client as any).trade_name || client.tradeName || "",
         cnpj: client.cnpj,
         email: client.email || "",
         phone: client.phone || "",
