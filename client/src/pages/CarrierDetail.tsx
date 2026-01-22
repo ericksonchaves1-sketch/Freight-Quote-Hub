@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import { ShieldAlert, Loader2, ArrowLeft, Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { z } from "zod";
 
 const FREIGHT_TYPES = [
@@ -145,19 +145,28 @@ export default function CarrierDetail() {
     enabled: !!carrierId
   });
 
+  const [editingAddressId, setEditingAddressId] = React.useState<number | null>(null);
+
   const addAddressMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await fetch(api.addresses.create.path, {
-        method: api.addresses.create.method,
+      const isEditing = !!editingAddressId;
+      const url = isEditing 
+        ? buildUrl(api.addresses.update.path, { id: editingAddressId! })
+        : api.addresses.create.path;
+      const method = isEditing ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...data, companyId: carrierId })
       });
-      if (!res.ok) throw new Error("Failed to add address");
+      if (!res.ok) throw new Error("Failed to save address");
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.addresses.list.path, carrierId] });
-      toast({ title: "Endereço adicionado" });
+      toast({ title: editingAddressId ? "Endereço atualizado" : "Endereço adicionado" });
+      setEditingAddressId(null);
     }
   });
 
@@ -398,7 +407,7 @@ export default function CarrierDetail() {
           </Form>
         </Card>
 
-        {!isNew && (
+        {!isNew ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold">Endereços</h3>
@@ -412,41 +421,104 @@ export default function CarrierDetail() {
                     <p className="text-sm text-muted-foreground">{addr.neighborhood}, {addr.city} - {addr.state}</p>
                     <p className="text-sm text-muted-foreground">CEP: {addr.zipCode}</p>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-destructive"
-                    onClick={() => deleteAddressMutation.mutate(addr.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setEditingAddressId(addr.id)}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="text-destructive"
+                      onClick={() => deleteAddressMutation.mutate(addr.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </Card>
               ))}
               
               <Card className="p-4 border-dashed bg-muted/20">
-                <form className="grid grid-cols-2 gap-4" onSubmit={(e) => {
-                  e.preventDefault();
-                  const formData = new FormData(e.currentTarget);
-                  const data = Object.fromEntries(formData.entries());
-                  addAddressMutation.mutate(data);
-                  e.currentTarget.reset();
-                }}>
+                <form 
+                  key={editingAddressId || 'new'}
+                  className="grid grid-cols-2 gap-4" 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    const data = Object.fromEntries(formData.entries());
+                    addAddressMutation.mutate(data);
+                    e.currentTarget.reset();
+                  }}
+                >
+                  {editingAddressId && (
+                    <div className="col-span-2 flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium">Editando endereço...</span>
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setEditingAddressId(null)}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  )}
                   <div className="col-span-2">
-                    <Input name="street" placeholder="Logradouro" required />
+                    <Input 
+                      name="street" 
+                      placeholder="Logradouro" 
+                      required 
+                      defaultValue={editingAddressId ? addresses?.find(a => a.id === editingAddressId)?.street : ''}
+                    />
                   </div>
-                  <Input name="number" placeholder="Número" required />
-                  <Input name="neighborhood" placeholder="Bairro" required />
-                  <Input name="city" placeholder="Cidade" required />
-                  <Input name="state" placeholder="UF" maxLength={2} required />
-                  <Input name="zipCode" placeholder="CEP" required />
+                  <Input 
+                    name="number" 
+                    placeholder="Número" 
+                    required 
+                    defaultValue={editingAddressId ? addresses?.find(a => a.id === editingAddressId)?.number : ''}
+                  />
+                  <Input 
+                    name="neighborhood" 
+                    placeholder="Bairro" 
+                    required 
+                    defaultValue={editingAddressId ? addresses?.find(a => a.id === editingAddressId)?.neighborhood : ''}
+                  />
+                  <Input 
+                    name="city" 
+                    placeholder="Cidade" 
+                    required 
+                    defaultValue={editingAddressId ? addresses?.find(a => a.id === editingAddressId)?.city : ''}
+                  />
+                  <Input 
+                    name="state" 
+                    placeholder="UF" 
+                    maxLength={2} 
+                    required 
+                    defaultValue={editingAddressId ? addresses?.find(a => a.id === editingAddressId)?.state : ''}
+                  />
+                  <Input 
+                    name="zipCode" 
+                    placeholder="CEP" 
+                    required 
+                    defaultValue={editingAddressId ? addresses?.find(a => a.id === editingAddressId)?.zipCode : ''}
+                  />
                   <Button className="col-span-2 gap-2" variant="outline" type="submit">
                     <Plus className="w-4 h-4" />
-                    Adicionar Endereço
+                    {editingAddressId ? "Salvar Endereço" : "Adicionar Endereço"}
                   </Button>
                 </form>
               </Card>
             </div>
           </div>
+        ) : (
+          <Card className="p-6 bg-muted/20 border-dashed">
+            <p className="text-center text-muted-foreground">
+              Salve o cadastro primeiro para poder adicionar endereços.
+            </p>
+          </Card>
         )}
       </div>
     </Layout>

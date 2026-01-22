@@ -1,0 +1,49 @@
+Corrigir Endereços para persistir no banco e aparecer na edição (Clientes e Transportadoras).
+
+Problema:
+- "Adicionar Endereço" não persiste e ao reabrir /clients/:id ou /carriers/:id a lista fica vazia.
+
+Objetivo:
+- Ao clicar "Adicionar Endereço" deve salvar no banco e vincular ao registro atual.
+- Ao editar, deve carregar e mostrar os endereços já salvos.
+- Permitir editar e remover endereço.
+
+BACKEND
+1) Banco:
+- Garantir tabela addresses (id, street, number, district, city, state, postal_code, complement, created_at)
+- Criar tabela de vínculo:
+  - company_addresses (company_id, address_id)
+  - carrier_addresses (carrier_id, address_id)
+
+2) Endpoints:
+- GET  /api/companies/:id/addresses
+- POST /api/companies/:id/addresses   (cria address + vincula)
+- PUT  /api/companies/:id/addresses/:addressId  (edita address)
+- DELETE /api/companies/:id/addresses/:addressId (remove vínculo; opcional: não deletar address)
+- Repetir igual para carriers:
+  - GET/POST/PUT/DELETE /api/carriers/:id/addresses...
+
+3) Auditoria:
+- Logar ADD_ADDRESS, UPDATE_ADDRESS, REMOVE_ADDRESS.
+
+FRONTEND
+1) Na tela /clients/:id e /carriers/:id:
+- Ao carregar a página, chamar GET .../:id/addresses e renderizar a lista acima do formulário.
+- Exibir lista em cards/linhas com: Logradouro, Nº, Bairro, Cidade/UF, CEP.
+- Cada item com botões: "Editar" e "Remover".
+
+2) Botão "Adicionar Endereço":
+- Deve chamar POST .../:id/addresses com os campos do form.
+- Ao sucesso: limpar inputs e atualizar a lista (refetch ou append).
+
+3) Editar endereço:
+- Ao clicar "Editar" em um item da lista:
+  - preencher o form com os dados do endereço selecionado
+  - trocar o botão para "Salvar Endereço"
+  - chamar PUT .../:id/addresses/:addressId
+  - ao sucesso, voltar para modo "Adicionar" e atualizar lista.
+
+4) Regras:
+- Se estiver criando um novo cliente/transportadora (sem id), desabilitar "Adicionar Endereço" e mostrar aviso: "Salve o cadastro primeiro".
+
+Não criar novas features além disso.

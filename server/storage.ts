@@ -18,6 +18,7 @@ export interface IStorage {
   getCompanies(type?: "client" | "carrier"): Promise<Company[]>;
 
   createAddress(address: InsertAddress): Promise<Address>;
+  updateAddress(id: number, address: Partial<InsertAddress>): Promise<Address>;
   getAddresses(companyId: number): Promise<Address[]>;
   deleteAddress(id: number): Promise<void>;
 
@@ -87,7 +88,14 @@ export class DatabaseStorage implements IStorage {
 
   async createAddress(address: InsertAddress): Promise<Address> {
     const [newAddress] = await db.insert(addresses).values(address).returning();
+    await this.createAuditLog(null, "ADD_ADDRESS", `Added address to company ${address.companyId}`);
     return newAddress;
+  }
+
+  async updateAddress(id: number, address: Partial<InsertAddress>): Promise<Address> {
+    const [updated] = await db.update(addresses).set(address).where(eq(addresses.id, id)).returning();
+    await this.createAuditLog(null, "UPDATE_ADDRESS", `Updated address ${id}`);
+    return updated;
   }
 
   async getAddresses(companyId: number): Promise<Address[]> {
@@ -96,6 +104,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAddress(id: number): Promise<void> {
     await db.delete(addresses).where(eq(addresses.id, id));
+    await this.createAuditLog(null, "REMOVE_ADDRESS", `Removed address ${id}`);
   }
 
   async createQuote(userId: number, quote: InsertQuote): Promise<Quote> {

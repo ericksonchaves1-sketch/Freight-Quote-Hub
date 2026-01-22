@@ -162,6 +162,14 @@ export const api = {
         201: z.custom<typeof addresses.$inferSelect>(),
       },
     },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/addresses/:id',
+      input: insertAddressSchema.partial(),
+      responses: {
+        200: z.custom<typeof addresses.$inferSelect>(),
+      },
+    },
     delete: {
       method: 'DELETE' as const,
       path: '/api/addresses/:id',

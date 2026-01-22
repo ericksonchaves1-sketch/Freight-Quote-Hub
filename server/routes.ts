@@ -112,6 +112,12 @@ export async function registerRoutes(
     res.status(201).json(item);
   });
 
+  app.put(api.addresses.update.path, async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const item = await storage.updateAddress(Number(req.params.id), req.body);
+    res.json(item);
+  });
+
   app.delete(api.addresses.delete.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     await storage.deleteAddress(Number(req.params.id));
