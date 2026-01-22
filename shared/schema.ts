@@ -19,7 +19,6 @@ export const companies = pgTable("companies", {
   address: text("address"), // Legacy field
   type: text("type", { enum: ["client", "carrier"] }).notNull(),
   status: text("status").default("active").notNull(),
-  active: boolean("active").default(true).notNull(),
   email: text("email"),
   phone: text("phone"),
   cargoTypes: text("cargo_types"), // comma separated or JSON

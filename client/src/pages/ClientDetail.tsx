@@ -91,7 +91,7 @@ export default function ClientDetail() {
         cnpj: client.cnpj,
         email: client.email || "",
         phone: client.phone || "",
-        status: client.status as any,
+        status: (client.status as any) || "active",
         type: "client"
       });
     }

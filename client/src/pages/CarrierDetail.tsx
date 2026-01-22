@@ -83,7 +83,7 @@ export default function CarrierDetail() {
         cnpj: carrier.cnpj,
         email: carrier.email || "",
         phone: carrier.phone || "",
-        status: carrier.status as any,
+        status: (carrier.status as any) || "active",
         type: "carrier" as const,
         tiposFrete: (carrier as any).tiposFrete || "",
         regioesAtendidas: (carrier as any).regioesAtendidas || ""

@@ -58,7 +58,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCompany(company: InsertCompany): Promise<Company> {
-    const [newCompany] = await db.insert(companies).values(company).returning();
+    const [newCompany] = await db.insert(companies).values({ ...company, status: company.status || 'active' }).returning();
     await this.createAuditLog(null, "CREATE_COMPANY", `Created company ${newCompany.name} (ID: ${newCompany.id})`);
     return newCompany;
   }

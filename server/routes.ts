@@ -72,7 +72,7 @@ export async function registerRoutes(
   app.delete(api.carriers.delete.path, async (req, res) => {
     const user = req.user as User | undefined;
     if (!req.isAuthenticated() || user?.role !== 'admin') return res.sendStatus(401);
-    await storage.updateCompany(Number(req.params.id), { status: "deleted", active: false });
+    await storage.updateCompany(Number(req.params.id), { status: "deleted" });
     res.sendStatus(204);
   });
 
