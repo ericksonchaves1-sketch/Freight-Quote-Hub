@@ -15,6 +15,7 @@ import { Plus, Edit, ShieldAlert, Loader2, Power, PowerOff } from "lucide-react"
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
 
 const FREIGHT_TYPES = [
   { id: "rodoviario", label: "Rodoviário" },
@@ -124,31 +125,27 @@ export default function CarrierList() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={carrier.status === "active" ? "default" : "secondary"}>
-                        {carrier.status === "active" ? "Ativo" : "Inativo"}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Switch 
+                          checked={carrier.status === "active"}
+                          onCheckedChange={() => toggleStatusMutation.mutate({ 
+                            id: carrier.id, 
+                            status: carrier.status === "active" ? "inactive" : "active" 
+                          })}
+                          disabled={toggleStatusMutation.isPending}
+                          data-testid={`switch-status-carrier-${carrier.id}`}
+                        />
+                        <Badge variant={carrier.status === "active" ? "default" : "secondary"}>
+                          {carrier.status === "active" ? "Ativo" : "Inativo"}
+                        </Badge>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
                       <Link href={`/carriers/${carrier.id}`}>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" data-testid={`link-edit-carrier-${carrier.id}`}>
                           <Edit className="w-4 h-4" />
                         </Button>
                       </Link>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => toggleStatusMutation.mutate({ 
-                          id: carrier.id, 
-                          status: carrier.status === "active" ? "inactive" : "active" 
-                        })}
-                        disabled={toggleStatusMutation.isPending}
-                      >
-                        {carrier.status === "active" ? (
-                          <PowerOff className="w-4 h-4 text-destructive" />
-                        ) : (
-                          <Power className="w-4 h-4 text-green-500" />
-                        )}
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))

@@ -15,6 +15,7 @@ import { Plus, Edit, ShieldAlert, Loader2, Power, PowerOff } from "lucide-react"
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
 
 export default function ClientList() {
   const { user } = useAuth();
@@ -106,31 +107,27 @@ export default function ClientList() {
                     <TableCell>{client.cnpj}</TableCell>
                     <TableCell>{client.email || "-"}</TableCell>
                     <TableCell>
-                      <Badge variant={client.status === "active" ? "default" : "secondary"}>
-                        {client.status === "active" ? "Ativo" : "Inativo"}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Switch 
+                          checked={client.status === "active"}
+                          onCheckedChange={() => toggleStatusMutation.mutate({ 
+                            id: client.id, 
+                            status: client.status === "active" ? "inactive" : "active" 
+                          })}
+                          disabled={toggleStatusMutation.isPending}
+                          data-testid={`switch-status-client-${client.id}`}
+                        />
+                        <Badge variant={client.status === "active" ? "default" : "secondary"}>
+                          {client.status === "active" ? "Ativo" : "Inativo"}
+                        </Badge>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
                       <Link href={`/clients/${client.id}`}>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" data-testid={`link-edit-client-${client.id}`}>
                           <Edit className="w-4 h-4" />
                         </Button>
                       </Link>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => toggleStatusMutation.mutate({ 
-                          id: client.id, 
-                          status: client.status === "active" ? "inactive" : "active" 
-                        })}
-                        disabled={toggleStatusMutation.isPending}
-                      >
-                        {client.status === "active" ? (
-                          <PowerOff className="w-4 h-4 text-destructive" />
-                        ) : (
-                          <Power className="w-4 h-4 text-green-500" />
-                        )}
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
