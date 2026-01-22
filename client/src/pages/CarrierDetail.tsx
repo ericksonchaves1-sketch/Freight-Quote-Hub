@@ -25,7 +25,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { ShieldAlert, Loader2, ArrowLeft } from "lucide-react";
+import { ShieldAlert, Loader2, ArrowLeft, Trash2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { z } from "zod";
@@ -133,6 +133,41 @@ export default function CarrierDetail() {
     },
     onError: (error) => {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const { data: addresses, isLoading: isLoadingAddresses } = useQuery({
+    queryKey: [api.addresses.list.path, carrierId],
+    queryFn: async () => {
+      const res = await fetch(buildUrl(api.addresses.list.path, { companyId: carrierId! }));
+      return api.addresses.list.responses[200].parse(await res.json());
+    },
+    enabled: !!carrierId
+  });
+
+  const addAddressMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await fetch(api.addresses.create.path, {
+        method: api.addresses.create.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data, companyId: carrierId })
+      });
+      if (!res.ok) throw new Error("Failed to add address");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.addresses.list.path, carrierId] });
+      toast({ title: "Endereço adicionado" });
+    }
+  });
+
+  const deleteAddressMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await fetch(buildUrl(api.addresses.delete.path, { id }), { method: "DELETE" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.addresses.list.path, carrierId] });
+      toast({ title: "Endereço removido" });
     }
   });
 
@@ -362,6 +397,57 @@ export default function CarrierDetail() {
             </form>
           </Form>
         </Card>
+
+        {!isNew && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold">Endereços</h3>
+            </div>
+            
+            <div className="grid gap-4">
+              {addresses?.map((addr) => (
+                <Card key={addr.id} className="p-4 flex justify-between items-start">
+                  <div>
+                    <p className="font-medium">{addr.street}, {addr.number}</p>
+                    <p className="text-sm text-muted-foreground">{addr.neighborhood}, {addr.city} - {addr.state}</p>
+                    <p className="text-sm text-muted-foreground">CEP: {addr.zipCode}</p>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-destructive"
+                    onClick={() => deleteAddressMutation.mutate(addr.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </Card>
+              ))}
+              
+              <Card className="p-4 border-dashed bg-muted/20">
+                <form className="grid grid-cols-2 gap-4" onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  const data = Object.fromEntries(formData.entries());
+                  addAddressMutation.mutate(data);
+                  e.currentTarget.reset();
+                }}>
+                  <div className="col-span-2">
+                    <Input name="street" placeholder="Logradouro" required />
+                  </div>
+                  <Input name="number" placeholder="Número" required />
+                  <Input name="neighborhood" placeholder="Bairro" required />
+                  <Input name="city" placeholder="Cidade" required />
+                  <Input name="state" placeholder="UF" maxLength={2} required />
+                  <Input name="zipCode" placeholder="CEP" required />
+                  <Button className="col-span-2 gap-2" variant="outline" type="submit">
+                    <Plus className="w-4 h-4" />
+                    Adicionar Endereço
+                  </Button>
+                </form>
+              </Card>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );
