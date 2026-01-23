@@ -30,6 +30,7 @@ export const companies = pgTable("companies", {
 export const addresses = pgTable("addresses", {
   id: serial("id").primaryKey(),
   companyId: integer("company_id").references(() => companies.id),
+  carrierId: integer("carrier_id").references(() => companies.id),
   street: text("street").notNull(),
   number: text("number").notNull(),
   complement: text("complement"),
