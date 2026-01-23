@@ -113,6 +113,9 @@ export async function registerRoutes(
     const companyId = Number(req.params.companyId);
     if (isNaN(companyId) || companyId <= 0) return res.status(400).json({ message: "Invalid company ID" });
     
+    const company = await storage.getCompany(companyId);
+    if (!company) return res.status(404).json({ message: "Company not found" });
+
     const { street, city, state, zipCode, number, neighborhood } = req.body;
     if (!street || !city || !state || !zipCode || !number || !neighborhood) {
       return res.status(400).json({ message: "Missing required address fields" });
@@ -150,6 +153,9 @@ export async function registerRoutes(
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const carrierId = Number(req.params.carrierId);
     if (isNaN(carrierId) || carrierId <= 0) return res.status(400).json({ message: "Invalid carrier ID" });
+
+    const carrier = await storage.getCompany(carrierId);
+    if (!carrier || carrier.type !== 'carrier') return res.status(404).json({ message: "Carrier not found" });
 
     const { street, city, state, zipCode, number, neighborhood } = req.body;
     if (!street || !city || !state || !zipCode || !number || !neighborhood) {

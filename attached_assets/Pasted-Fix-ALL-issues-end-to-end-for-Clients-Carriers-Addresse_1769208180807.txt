@@ -1,0 +1,77 @@
+Fix ALL issues end-to-end for Clients/Carriers + Addresses + soft delete + CPF/CNPJ duplicate.
+
+CURRENT BUGS:
+1) Creating Client/Carrier sometimes fails with: duplicate key violates "companies_cnpj_unique" even after “Excluir Cadastro” (soft delete).
+2) Addresses are not persisting or listing. UI shows “Nenhum endereço…” and POST shows 500 “Internal server error” for both clients and carriers.
+3) Edit pages must always show the Addresses block (list + form), and load saved addresses after refresh.
+
+GOALS:
+A) CPF/CNPJ uniqueness must ignore soft-deleted records:
+- Allow creating a new company/carrier with same cpfCnpj if previous record has status='deleted'.
+- Normalize cpfCnpj to digits-only before saving to avoid masked duplicates.
+B) Addresses must work for both:
+- /clients/:id uses companies addresses
+- /carriers/:id uses carriers addresses
+- Must support GET list and POST create and persist in DB with correct foreign key.
+C) Frontend must:
+- Always render Addresses block (list + form).
+- If route is /clients/new or /carriers/new: show the block but disable “Adicionar Endereço” and show message “Salve o cadastro antes de adicionar endereços”.
+- If id exists: load addresses on mount, list above the form, refetch after add, and keep after F5.
+
+BACKEND TASKS:
+1) Database: fix unique constraint
+- Drop the existing unique constraint or unique index named companies_cnpj_unique (or equivalent).
+- Create a PARTIAL unique index:
+  UNIQUE (cpfCnpj) WHERE status <> 'deleted'
+  Name: companies_cnpj_unique_active
+- Ensure cpfCnpj column exists and is VARCHAR/TEXT.
+
+2) Address persistence:
+- Confirm addresses table has these columns: id, street, number, neighborhood, city, state, zip, country (default 'BR'), companyId (nullable), carrierId (nullable), createdAt
+- Ensure FK relations exist (or at least consistent linking) for companyId -> companies.id and carrierId -> companies.id (if carriers are also stored in companies) OR -> carriers.id (if separate table exists). Detect actual model and use the correct FK.
+- Implement/verify routes:
+  GET  /api/companies/:id/addresses
+  POST /api/companies/:id/addresses
+  GET  /api/carriers/:id/addresses
+  POST /api/carriers/:id/addresses
+- In POST, link using URL param (:id) not body; trim fields; set default country='BR' if missing.
+- Return JSON address object on POST and JSON array on GET.
+- Add proper error handling: if parent not found -> 404 JSON; validation -> 400 JSON; duplicates -> 409 JSON.
+- Log server errors with enough detail to debug (but keep response generic).
+
+3) Storage/data layer:
+- Ensure there are functions:
+  getCompanyAddresses(companyId)
+  createCompanyAddress(companyId, data)
+  getCarrierAddresses(carrierId)
+  createCarrierAddress(carrierId, data)
+- Make sure “carriers” mapping matches your schema: if carriers are rows in companies with type='CARRIER' or role, still use companies.id as carrierId; otherwise use carriers table id. Implement accordingly.
+
+FRONTEND TASKS:
+1) Ensure in /clients/:id and /carriers/:id pages:
+- AddressesSection is rendered always.
+- If no id (new): show disabled button + warning text.
+- If id: on mount call proper GET endpoint and set addresses[] state.
+- Render list above form; if empty show “Nenhum endereço cadastrado ainda.”
+- On add: POST to correct endpoint, then refetch GET, clear inputs, show toast success; on error show toast with message.
+
+2) Ensure correct API base:
+- During dev, frontend must call backend via /api/... (proxy configured) not directly /api on a different host.
+- Fix any wrong endpoint paths that cause 404.
+
+TESTS / VERIFICATION (do these and confirm in console):
+1) Create a client with cpfCnpj; soft delete it (status='deleted'); create again with same cpfCnpj must succeed.
+2) Open /clients/:id: add an address; it must appear immediately and remain after F5.
+3) Repeat for /carriers/:id.
+4) Confirm GET /api/companies/:id/addresses and /api/carriers/:id/addresses return arrays.
+
+IMPORTANT:
+- Apply migrations safely (ALTER TABLE / CREATE INDEX) and keep compatibility with existing data.
+- Do not remove soft delete behavior; keep status values active/inactive/deleted.
+- If any column names differ (cpf_cnpj vs cpfCnpj), detect and standardize with minimal changes, updating schema + queries consistently.
+
+Deliverables:
+- Updated DB migrations/SQL
+- Updated backend routes + storage
+- Updated frontend pages/components
+- Brief note on what changed and how to test (URLs + expected JSON).

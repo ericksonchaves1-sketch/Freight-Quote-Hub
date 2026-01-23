@@ -60,13 +60,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCompany(company: InsertCompany): Promise<Company> {
-    const [newCompany] = await db.insert(companies).values({ ...company, status: company.status || 'active' }).returning();
+    const normalizedCnpj = company.cnpj.replace(/\D/g, "");
+    const [newCompany] = await db.insert(companies).values({ 
+      ...company, 
+      cnpj: normalizedCnpj,
+      status: company.status || 'active' 
+    }).returning();
     await this.createAuditLog(null, "CREATE_COMPANY", `Created company ${newCompany.name} (ID: ${newCompany.id})`);
     return newCompany;
   }
 
   async updateCompany(id: number, company: Partial<InsertCompany>): Promise<Company> {
-    const [updated] = await db.update(companies).set(company).where(eq(companies.id, id)).returning();
+    const updateData = { ...company };
+    if (updateData.cnpj) {
+      updateData.cnpj = updateData.cnpj.replace(/\D/g, "");
+    }
+    const [updated] = await db.update(companies).set(updateData).where(eq(companies.id, id)).returning();
     await this.createAuditLog(null, "UPDATE_COMPANY", `Updated company ${updated.name} (ID: ${id})`);
     return updated;
   }
