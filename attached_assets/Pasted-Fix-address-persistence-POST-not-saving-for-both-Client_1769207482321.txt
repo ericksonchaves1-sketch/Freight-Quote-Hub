@@ -1,0 +1,62 @@
+Fix address persistence (POST not saving) for both Clients and Carriers.
+
+Current behavior:
+- Adding an address from /clients/:id or /carriers/:id shows success UI but no address is saved.
+- GET /api/companies/:id/addresses and GET /api/carriers/:id/addresses always return [].
+
+Goal:
+- POST endpoints must persist addresses in DB and return created row.
+- Frontend must show backend errors (no silent failures).
+- After POST success, refetch GET and show saved address.
+
+Backend: audit + fix routes
+
+1) Locate the backend handlers for:
+- POST /api/companies/:id/addresses
+- POST /api/carriers/:id/addresses
+- GET  /api/companies/:id/addresses
+- GET  /api/carriers/:id/addresses
+
+2) Ensure correct FK assignment:
+- For companies: insert must set addresses.companyId = Number(req.params.id)
+- For carriers:  insert must set addresses.carrierId = Number(req.params.id)
+Do not rely on req.body.companyId/carrierId.
+
+3) Ensure required fields are handled:
+- addresses.country exists in DB. If req.body.country is missing/empty, default "BR".
+- Also trim string fields and allow nulls for optional fields safely.
+
+4) Add defensive validation:
+- If id is NaN or <= 0, return 400.
+- If body missing required address fields (street/city/state/zip), return 400 with JSON error.
+
+5) Make sure the insert returns created row:
+- Return 201 with created address JSON.
+- If error occurs, return 500 with error message and console.error stack.
+
+Database: enforce default + backfill
+
+6) Run SQL migration automatically at startup OR via drizzle/sql:
+- ALTER TABLE addresses ALTER COLUMN country SET DEFAULT 'BR';
+- UPDATE addresses SET country='BR' WHERE country IS NULL;
+
+Also verify addresses table has correct columns: street, number, neighborhood, city, state, zip, country, company_id, carrier_id (or correct naming per schema).
+
+Frontend: stop silent failure + refetch
+
+7) In AddressesSection (client and carrier pages):
+- On addAddress, if fetch returns !ok, read response text/json and show toast error.
+- Only show success toast after 200/201.
+- After success, call refetchAddresses() and update list.
+
+Testing
+
+8) Add a test script or manual test instructions:
+- Create address via curl:
+  POST /api/companies/1/addresses with JSON body
+  POST /api/carriers/1/addresses with JSON body
+- Confirm GET returns at least 1 row.
+- Confirm UI shows the new address and it persists after refresh.
+
+Constraint:
+- Do NOT add new features. Only fix persistence, error handling, and correct API wiring.

@@ -102,32 +102,78 @@ export async function registerRoutes(
   // Addresses CRUD
   app.get("/api/companies/:companyId/addresses", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const items = await storage.getAddresses(Number(req.params.companyId));
+    const companyId = Number(req.params.companyId);
+    if (isNaN(companyId) || companyId <= 0) return res.status(400).json({ message: "Invalid company ID" });
+    const items = await storage.getAddresses(companyId);
     res.json(items);
   });
 
   app.post("/api/companies/:companyId/addresses", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const item = await storage.createAddress({
-      ...req.body,
-      companyId: Number(req.params.companyId)
-    });
-    res.status(201).json(item);
+    const companyId = Number(req.params.companyId);
+    if (isNaN(companyId) || companyId <= 0) return res.status(400).json({ message: "Invalid company ID" });
+    
+    const { street, city, state, zipCode, number, neighborhood } = req.body;
+    if (!street || !city || !state || !zipCode || !number || !neighborhood) {
+      return res.status(400).json({ message: "Missing required address fields" });
+    }
+
+    try {
+      const item = await storage.createAddress({
+        ...req.body,
+        street: street.trim(),
+        city: city.trim(),
+        state: state.trim(),
+        zipCode: zipCode.trim(),
+        number: number.trim(),
+        neighborhood: neighborhood.trim(),
+        country: req.body.country?.trim() || "BR",
+        companyId: companyId,
+        carrierId: null
+      });
+      res.status(201).json(item);
+    } catch (err) {
+      console.error("Error creating company address:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   app.get("/api/carriers/:carrierId/addresses", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const items = await storage.getAddresses(Number(req.params.carrierId));
+    const carrierId = Number(req.params.carrierId);
+    if (isNaN(carrierId) || carrierId <= 0) return res.status(400).json({ message: "Invalid carrier ID" });
+    const items = await storage.getCarrierAddresses(carrierId);
     res.json(items);
   });
 
   app.post("/api/carriers/:carrierId/addresses", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const item = await storage.createAddress({
-      ...req.body,
-      companyId: Number(req.params.carrierId)
-    });
-    res.status(201).json(item);
+    const carrierId = Number(req.params.carrierId);
+    if (isNaN(carrierId) || carrierId <= 0) return res.status(400).json({ message: "Invalid carrier ID" });
+
+    const { street, city, state, zipCode, number, neighborhood } = req.body;
+    if (!street || !city || !state || !zipCode || !number || !neighborhood) {
+      return res.status(400).json({ message: "Missing required address fields" });
+    }
+
+    try {
+      const item = await storage.createAddress({
+        ...req.body,
+        street: street.trim(),
+        city: city.trim(),
+        state: state.trim(),
+        zipCode: zipCode.trim(),
+        number: number.trim(),
+        neighborhood: neighborhood.trim(),
+        country: req.body.country?.trim() || "BR",
+        carrierId: carrierId,
+        companyId: null
+      });
+      res.status(201).json(item);
+    } catch (err) {
+      console.error("Error creating carrier address:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   app.put("/api/addresses/:id", async (req, res) => {

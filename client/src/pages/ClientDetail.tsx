@@ -141,13 +141,23 @@ export default function ClientDetail() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
       });
-      if (!res.ok) throw new Error("Failed to save address");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: "Failed to save address" }));
+        throw new Error(errorData.message || "Failed to save address");
+      }
       return res.json();
     },
     onSuccess: () => {
       refetchAddresses();
       toast({ title: editingAddressId ? "Endereço atualizado" : "Endereço adicionado" });
       setEditingAddressId(null);
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "Erro ao salvar endereço", 
+        description: error.message, 
+        variant: "destructive" 
+      });
     }
   });
 
