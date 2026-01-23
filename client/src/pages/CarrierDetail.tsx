@@ -2,7 +2,7 @@ import { Layout } from "@/components/Layout";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertCompanySchema } from "@shared/schema";
+import { insertCompanySchema, type Address } from "@shared/schema";
 import { api, buildUrl } from "@shared/routes";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
@@ -136,11 +136,12 @@ export default function CarrierDetail() {
     }
   });
 
-  const { data: addresses, isLoading: isLoadingAddresses } = useQuery({
-    queryKey: [api.addresses.list.path, carrierId],
+  const { data: addresses, isLoading: isLoadingAddresses, refetch: refetchAddresses } = useQuery<Address[]>({
+    queryKey: ["/api/carriers", carrierId, "addresses"],
     queryFn: async () => {
-      const res = await fetch(buildUrl(api.addresses.list.path, { companyId: carrierId! }));
-      return api.addresses.list.responses[200].parse(await res.json());
+      const res = await fetch(`/api/carriers/${carrierId}/addresses`);
+      if (!res.ok) return [];
+      return res.json();
     },
     enabled: !!carrierId
   });
@@ -151,20 +152,20 @@ export default function CarrierDetail() {
     mutationFn: async (data: any) => {
       const isEditing = !!editingAddressId;
       const url = isEditing 
-        ? buildUrl(api.addresses.update.path, { id: editingAddressId! })
-        : api.addresses.create.path;
+        ? `/api/addresses/${editingAddressId}`
+        : `/api/carriers/${carrierId}/addresses`;
       const method = isEditing ? "PUT" : "POST";
 
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, companyId: carrierId })
+        body: JSON.stringify(data)
       });
       if (!res.ok) throw new Error("Failed to save address");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.addresses.list.path, carrierId] });
+      refetchAddresses();
       toast({ title: editingAddressId ? "Endereço atualizado" : "Endereço adicionado" });
       setEditingAddressId(null);
     }
@@ -172,10 +173,10 @@ export default function CarrierDetail() {
 
   const deleteAddressMutation = useMutation({
     mutationFn: async (id: number) => {
-      await fetch(buildUrl(api.addresses.delete.path, { id }), { method: "DELETE" });
+      await fetch(`/api/addresses/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.addresses.list.path, carrierId] });
+      refetchAddresses();
       toast({ title: "Endereço removido" });
     }
   });
@@ -407,13 +408,16 @@ export default function CarrierDetail() {
           </Form>
         </Card>
 
-        {!isNew ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold">Endereços</h3>
-            </div>
-            
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold">Endereços</h3>
+          </div>
+          
+          {!isNew ? (
             <div className="grid gap-4">
+              {addresses?.length === 0 && (
+                <p className="text-sm text-muted-foreground italic">Nenhum endereço cadastrado ainda.</p>
+              )}
               {addresses?.map((addr) => (
                 <Card key={addr.id} className="p-4 flex justify-between items-start">
                   <div>
@@ -512,14 +516,14 @@ export default function CarrierDetail() {
                 </form>
               </Card>
             </div>
-          </div>
-        ) : (
-          <Card className="p-6 bg-muted/20 border-dashed">
-            <p className="text-center text-muted-foreground">
-              Salve o cadastro primeiro para poder adicionar endereços.
-            </p>
-          </Card>
-        )}
+          ) : (
+            <Card className="p-6 bg-muted/20 border-dashed">
+              <p className="text-center text-muted-foreground">
+                Salve o cadastro primeiro para poder adicionar endereços.
+              </p>
+            </Card>
+          )}
+        </div>
       </div>
     </Layout>
   );

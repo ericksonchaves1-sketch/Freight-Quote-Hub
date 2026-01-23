@@ -1,0 +1,70 @@
+Fix addresses rendering and persistence for Clients and Carriers.
+
+Context:
+Currently:
+- On Edit Client page, the Addresses section is missing (form and list not rendering).
+- On Edit Carrier page, only the form renders, but previously saved addresses are not listed.
+
+Goal:
+On /clients/:id and /carriers/:id:
+- Always render the Addresses block (form + list).
+- Load and display saved addresses from backend.
+- Allow adding an address and immediately refresh the list.
+
+Frontend Tasks:
+
+1. Ensure the Addresses component is rendered:
+- In client edit page JSX, make sure <AddressesSection /> (or equivalent) is always mounted.
+- In carrier edit page JSX, ensure both form and list are rendered.
+
+2. Conditional behavior:
+- If no id exists (new record):
+  - Show the Addresses block.
+  - Disable the "Add Address" button.
+  - Display message: "Save the record before adding addresses."
+
+- If id exists:
+  - Enable add button.
+  - Fetch and display addresses.
+
+3. Data loading:
+On page load when id exists:
+- Fetch:
+  GET /api/companies/:id/addresses → setAddresses([])
+  GET /api/carriers/:id/addresses → setAddresses([])
+
+- Render the list above the form.
+- If empty, show: "No addresses registered yet."
+
+4. Add address action:
+On clicking "Add Address":
+- POST to:
+  /api/companies/:id/addresses OR /api/carriers/:id/addresses
+- On success:
+  - Clear form fields.
+  - Refetch GET to refresh list.
+
+Backend Tasks:
+
+Ensure the following endpoints exist and function correctly:
+
+GET  /api/companies/:id/addresses
+POST /api/companies/:id/addresses
+
+GET  /api/carriers/:id/addresses
+POST /api/carriers/:id/addresses
+
+- Must return JSON array.
+- Ensure proper FK relationships.
+
+Testing:
+
+1. Open /clients/1:
+- Form and list must render.
+- Add address → must appear immediately and persist after refresh.
+
+2. Repeat for /carriers/:id.
+
+Constraints:
+- Do NOT add new features.
+- Only fix rendering, loading, and persistence of addresses.

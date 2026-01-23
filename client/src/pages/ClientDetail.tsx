@@ -58,11 +58,12 @@ export default function ClientDetail() {
     enabled: !!clientId
   });
 
-  const { data: addresses, isLoading: isLoadingAddresses } = useQuery({
-    queryKey: [api.addresses.list.path, clientId],
+  const { data: addresses, isLoading: isLoadingAddresses, refetch: refetchAddresses } = useQuery<Address[]>({
+    queryKey: ["/api/companies", clientId, "addresses"],
     queryFn: async () => {
-      const res = await fetch(buildUrl(api.addresses.list.path, { companyId: clientId! }));
-      return api.addresses.list.responses[200].parse(await res.json());
+      const res = await fetch(`/api/companies/${clientId}/addresses`);
+      if (!res.ok) return [];
+      return res.json();
     },
     enabled: !!clientId
   });
@@ -131,20 +132,20 @@ export default function ClientDetail() {
     mutationFn: async (data: any) => {
       const isEditing = !!editingAddressId;
       const url = isEditing 
-        ? buildUrl(api.addresses.update.path, { id: editingAddressId! })
-        : api.addresses.create.path;
+        ? `/api/addresses/${editingAddressId}`
+        : `/api/companies/${clientId}/addresses`;
       const method = isEditing ? "PUT" : "POST";
 
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, companyId: clientId })
+        body: JSON.stringify(data)
       });
       if (!res.ok) throw new Error("Failed to save address");
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.addresses.list.path, clientId] });
+      refetchAddresses();
       toast({ title: editingAddressId ? "Endereço atualizado" : "Endereço adicionado" });
       setEditingAddressId(null);
     }
@@ -152,10 +153,10 @@ export default function ClientDetail() {
 
   const deleteAddressMutation = useMutation({
     mutationFn: async (id: number) => {
-      await fetch(buildUrl(api.addresses.delete.path, { id }), { method: "DELETE" });
+      await fetch(`/api/addresses/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.addresses.list.path, clientId] });
+      refetchAddresses();
       toast({ title: "Endereço removido" });
     }
   });
@@ -358,21 +359,122 @@ export default function ClientDetail() {
               </Form>
             </Card>
 
-            {!isNew ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold">Endereços</h3>
-                </div>
-                
-                {/* ... (rest of addresses logic) ... */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold">Endereços</h3>
               </div>
-            ) : (
-              <Card className="p-6 bg-muted/20 border-dashed">
-                <p className="text-center text-muted-foreground">
-                  Salve o cadastro primeiro para poder adicionar endereços.
-                </p>
-              </Card>
-            )}
+              
+              {!isNew ? (
+                <div className="grid gap-4">
+                  {addresses?.length === 0 && (
+                    <p className="text-sm text-muted-foreground italic">Nenhum endereço cadastrado ainda.</p>
+                  )}
+                  {addresses?.map((addr) => (
+                    <Card key={addr.id} className="p-4 flex justify-between items-start">
+                      <div>
+                        <p className="font-medium">{addr.street}, {addr.number}</p>
+                        <p className="text-sm text-muted-foreground">{addr.neighborhood}, {addr.city} - {addr.state}</p>
+                        <p className="text-sm text-muted-foreground">CEP: {addr.zipCode}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => setEditingAddressId(addr.id)}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="text-destructive"
+                          onClick={() => deleteAddressMutation.mutate(addr.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                  
+                  <Card className="p-4 border-dashed bg-muted/20">
+                    <form 
+                      key={editingAddressId || 'new'}
+                      className="grid grid-cols-2 gap-4" 
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.currentTarget);
+                        const data = Object.fromEntries(formData.entries());
+                        addAddressMutation.mutate(data);
+                        e.currentTarget.reset();
+                      }}
+                    >
+                      {editingAddressId && (
+                        <div className="col-span-2 flex justify-between items-center mb-2">
+                          <span className="text-sm font-medium">Editando endereço...</span>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setEditingAddressId(null)}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      )}
+                      <div className="col-span-2">
+                        <Input 
+                          name="street" 
+                          placeholder="Logradouro" 
+                          required 
+                          defaultValue={editingAddressId ? addresses?.find(a => a.id === editingAddressId)?.street : ''}
+                        />
+                      </div>
+                      <Input 
+                        name="number" 
+                        placeholder="Número" 
+                        required 
+                        defaultValue={editingAddressId ? addresses?.find(a => a.id === editingAddressId)?.number : ''}
+                      />
+                      <Input 
+                        name="neighborhood" 
+                        placeholder="Bairro" 
+                        required 
+                        defaultValue={editingAddressId ? addresses?.find(a => a.id === editingAddressId)?.neighborhood : ''}
+                      />
+                      <Input 
+                        name="city" 
+                        placeholder="Cidade" 
+                        required 
+                        defaultValue={editingAddressId ? addresses?.find(a => a.id === editingAddressId)?.city : ''}
+                      />
+                      <Input 
+                        name="state" 
+                        placeholder="UF" 
+                        maxLength={2} 
+                        required 
+                        defaultValue={editingAddressId ? addresses?.find(a => a.id === editingAddressId)?.state : ''}
+                      />
+                      <Input 
+                        name="zipCode" 
+                        placeholder="CEP" 
+                        required 
+                        defaultValue={editingAddressId ? addresses?.find(a => a.id === editingAddressId)?.zipCode : ''}
+                      />
+                      <Button className="col-span-2 gap-2" variant="outline" type="submit">
+                        <Plus className="w-4 h-4" />
+                        {editingAddressId ? "Salvar Endereço" : "Adicionar Endereço"}
+                      </Button>
+                    </form>
+                  </Card>
+                </div>
+              ) : (
+                <Card className="p-6 bg-muted/20 border-dashed">
+                  <p className="text-center text-muted-foreground">
+                    Salve o cadastro primeiro para poder adicionar endereços.
+                  </p>
+                </Card>
+              )}
+            </div>
           </div>
           
           <div className="space-y-4">
