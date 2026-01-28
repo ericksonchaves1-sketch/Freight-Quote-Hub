@@ -220,4 +220,11 @@ export function setupAuth(app: Express) {
   app.get("/api/user", requireAuth, (req: any, res) => {
     res.json(req.user);
   });
+
+  // --------------------
+  // ✅ ALIAS /api/auth/me (para compatibilidade com frontend)
+  // --------------------
+  app.get("/api/auth/me", requireAuth, (req: any, res) => {
+    res.json(req.user);
+  });
 }
