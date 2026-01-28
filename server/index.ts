@@ -4,15 +4,23 @@ import { registerRoutes } from "./routes";
 
 const app = express();
 
-console.log("🔥 API starting...");
+console.log("🔥 API starting... BUILD=LOGIN_DEBUG_V1");
 
-// Middlewares
+// ✅ parsers ANTES das rotas
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// ✅ Render fornece a porta automaticamente
+// ✅ debug temporário só no login
+app.use((req, _res, next) => {
+  if (req.method === "POST" && req.path === "/api/login") {
+    console.log("🧪 /api/login content-type:", req.headers["content-type"]);
+    console.log("🧪 /api/login body:", req.body);
+  }
+  next();
+});
+
 const PORT = Number(process.env.PORT) || 3000;
 
-// Register routes + start server
 (async () => {
   try {
     console.log("✅ Registrando rotas...");
@@ -23,7 +31,7 @@ const PORT = Number(process.env.PORT) || 3000;
       console.log(`🚀 Server running on port ${PORT}`);
     });
   } catch (err) {
-    console.error("❌ Erro ao iniciar servidor:", err);
+    console.error("⛔ Erro ao iniciar servidor:", err);
     process.exit(1);
   }
 })();
