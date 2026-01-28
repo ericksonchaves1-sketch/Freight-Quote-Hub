@@ -11,7 +11,7 @@ try {
   const raw = process.env.DATABASE_URL || "";
   const url = new URL(raw);
   console.log("🧪 DB HOST:", url.hostname);
-} catch (err) {
+} catch {
   console.log("🧪 DB HOST: (invalid or missing DATABASE_URL)");
 }
 
@@ -23,21 +23,34 @@ app.use(express.urlencoded({ extended: true }));
 app.use((req, _res, next) => {
   console.log(`➡️ ${req.method} ${req.path}`);
   console.log("   content-type:", req.headers["content-type"]);
-  if (req.method !== "GET") {
-    console.log("   body:", req.body);
-  }
+  if (req.method !== "GET") console.log("   body:", req.body);
   next();
 });
 
-// ✅ Render fornece a porta automaticamente
 const PORT = Number(process.env.PORT) || 3000;
 
-// Register routes + start server
+process.on("unhandledRejection", (reason) => {
+  console.error("⛔ unhandledRejection:", reason);
+});
+process.on("uncaughtException", (err) => {
+  console.error("⛔ uncaughtException:", err);
+});
+
 (async () => {
   try {
     console.log("✅ Registrando rotas...");
     await registerRoutes(app);
     console.log("✅ Rotas registradas");
+
+    // ✅ ERROR HANDLER GLOBAL: transforma 500 em JSON com detalhe
+    app.use((err: any, _req: any, res: any, _next: any) => {
+      console.error("⛔ express error:", err);
+      res.status(500).json({
+        ok: false,
+        error: "internal_server_error",
+        detail: String(err?.message || err),
+      });
+    });
 
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 Server running on port ${PORT}`);
