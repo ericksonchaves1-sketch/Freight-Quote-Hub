@@ -9,8 +9,8 @@ console.log("🔥 INDEX.TS CARREGOU");
 // Middlewares básicos
 app.use(express.json());
 
-// ✅ Porta alterada para fugir do conflito da 5000
-const PORT = 5001;
+// ✅ Porta dinâmica (Render usa process.env.PORT). Local continua 5001.
+const PORT = Number(process.env.PORT) || 5001;
 
 // Register routes + start server
 (async () => {
@@ -19,8 +19,9 @@ const PORT = 5001;
     await registerRoutes(app);
     console.log("✅ Rotas registradas");
 
-    app.listen(PORT, "127.0.0.1", () => {
-      console.log(`🚀 Server running on http://127.0.0.1:${PORT}`);
+    // ✅ Importante: no Render precisa escutar em 0.0.0.0 e na porta do env PORT
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`🚀 Server running on port ${PORT}`);
     });
   } catch (err) {
     console.error("❌ Erro ao iniciar servidor:", err);
