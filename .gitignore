@@ -1,6 +1,35 @@
+﻿# dependencies
 node_modules
+**/node_modules
+
+# builds
 dist
+build
+**/dist
+**/build
+
+# env (never commit)
+.env
+.env.*
+server/.env
+server/.env.*
+
+# local folders / artifacts
+.local/
+web/
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS / IDE
 .DS_Store
+.vscode/
+.idea/
+
+# existing project ignores
 server/public
 vite.config.ts.*
 *.tar.gz

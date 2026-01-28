@@ -1,5 +1,20 @@
 import { z } from 'zod';
-import { insertUserSchema, insertCompanySchema, insertQuoteSchema, insertBidSchema, insertAddressSchema, users, companies, quotes, bids, addresses, type User, type InsertUser, type InsertQuote, type InsertBid } from './schema';
+import {
+  insertUserSchema,
+  insertCompanySchema,
+  insertQuoteSchema,
+  insertBidSchema,
+  insertAddressSchema,
+  users,
+  companies,
+  quotes,
+  bids,
+  addresses,
+  type User,
+  type InsertUser,
+  type InsertQuote,
+  type InsertBid
+} from './schema';
 
 // Export types for hooks
 export type { User, InsertUser, InsertQuote, InsertBid };
@@ -208,7 +223,8 @@ export const api = {
     create: {
       method: 'POST' as const,
       path: '/api/quotes/:quoteId/bids',
-      input: insertBidSchema,
+      // ✅ agora NÃO exige mais quoteId no body
+      input: insertBidSchema.omit({ quoteId: true }),
       responses: {
         201: z.custom<typeof bids.$inferSelect>(),
         400: errorSchemas.validation,
