@@ -4,13 +4,13 @@ import { registerRoutes } from "./routes";
 
 const app = express();
 
-console.log("🔥 INDEX.TS CARREGOU");
+console.log("🔥 API starting...");
 
-// Middlewares básicos
+// Middlewares
 app.use(express.json());
 
-// ✅ Porta dinâmica (Render usa process.env.PORT). Local continua 5001.
-const PORT = Number(process.env.PORT) || 5001;
+// ✅ Render fornece a porta automaticamente
+const PORT = Number(process.env.PORT) || 3000;
 
 // Register routes + start server
 (async () => {
@@ -19,7 +19,6 @@ const PORT = Number(process.env.PORT) || 5001;
     await registerRoutes(app);
     console.log("✅ Rotas registradas");
 
-    // ✅ Importante: no Render precisa escutar em 0.0.0.0 e na porta do env PORT
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
