@@ -6,6 +6,15 @@ const app = express();
 
 console.log("🔥 API starting... BUILD=REQ_LOG_V1");
 
+// 🧪 LOG DO HOST DO BANCO (sem expor senha)
+try {
+  const raw = process.env.DATABASE_URL || "";
+  const url = new URL(raw);
+  console.log("🧪 DB HOST:", url.hostname);
+} catch (err) {
+  console.log("🧪 DB HOST: (invalid or missing DATABASE_URL)");
+}
+
 // Parsers ANTES das rotas
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -20,8 +29,10 @@ app.use((req, _res, next) => {
   next();
 });
 
+// ✅ Render fornece a porta automaticamente
 const PORT = Number(process.env.PORT) || 3000;
 
+// Register routes + start server
 (async () => {
   try {
     console.log("✅ Registrando rotas...");
