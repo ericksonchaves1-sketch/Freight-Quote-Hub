@@ -4,17 +4,18 @@ import { registerRoutes } from "./routes";
 
 const app = express();
 
-console.log("🔥 API starting... BUILD=LOGIN_DEBUG_V1");
+console.log("🔥 API starting... BUILD=REQ_LOG_V1");
 
-// ✅ parsers ANTES das rotas
+// Parsers ANTES das rotas
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ debug temporário só no login
+// ✅ LOG GLOBAL TEMPORÁRIO: mostra toda requisição que chega
 app.use((req, _res, next) => {
-  if (req.method === "POST" && req.path === "/api/login") {
-    console.log("🧪 /api/login content-type:", req.headers["content-type"]);
-    console.log("🧪 /api/login body:", req.body);
+  console.log(`➡️ ${req.method} ${req.path}`);
+  console.log("   content-type:", req.headers["content-type"]);
+  if (req.method !== "GET") {
+    console.log("   body:", req.body);
   }
   next();
 });
